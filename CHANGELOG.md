@@ -3,6 +3,13 @@
 ## 2.2.2 — 2026-10-04
 
 **Added** (folded in before release)
+- Launcher / SPT web panel mod page: `ModMetadata` implements `IModBlazorMetadata` (HomePage
+  `/compoundingperf`); `Web/WebPageController` serves one embedded HTML page plus `api/state` and
+  `api/set` (SPT maps controllers of such mods). Works without the game. Viewing follows the web
+  panel's login rules; changes need the Administrator policy and the page's `X-CompoundingPerf` header,
+  and go through `LiveConfig.Update` like F12 edits.
+- `SettingsCatalog.cs` (shared with the client): Korean/English names and descriptions of every live
+  setting, so F12 and the web page say the same.
 - F12 page in Korean or English: `00. Status · language` → `Language`. Categories, names,
   descriptions and status lines switch; the server also sends `LastCleanupEn`.
 - `CompoundingPerf.Client.StatusBridge` (connected, status lines, last result, refresh) for other

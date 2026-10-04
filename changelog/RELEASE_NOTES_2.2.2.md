@@ -20,6 +20,12 @@
 2. 값을 바꾸면 **0.8초 뒤 서버에 바로 적용**되고, 서버의 `config.json`에도 저장돼서 다음에 서버를 켜도 유지됩니다. 서버 재시작이 필요 없습니다.
 3. 맨 위 `00. 상태 · 언어` 칸에 서버 연결 여부, 서버 메모리, 마지막 레이드 후 정리 결과가 나옵니다.
 
+- **SPT 런처 '모드 페이지'에서 설정 (새로 생김)**
+
+1. SPT 런처의 **모드 페이지** 목록에 **CompoundingPerf** 가 뜹니다. 누르면 서버 상태(서버 메모리, 마지막 레이드 후 정리)와 모든 설정이 나옵니다.
+2. **게임을 켜지 않아도** 서버만 켜져 있으면 바로 바꿀 수 있고, 바꾸면 즉시 적용되고 config.json에 저장됩니다. 한국어/English 버튼, 검색, '기본값으로' 버튼이 있습니다.
+3. 이 PC에서는 그냥 열립니다. 다른 PC에서 열 때는 SPT 웹 패널 로그인이 필요하고, 설정은 관리자만 바꿀 수 있습니다.
+
 - **RAM 클리너 웹 페이지에서도 설정 (RAM 클리너 zzap 2.12.0과 같이 쓸 때)**
 
 1. RAM 클리너를 같이 쓰면 게임을 켜 둔 채 브라우저에서 **`http://127.0.0.1:6977/server`** ('서버 최적화' 탭)로 이 모드의 설정과 서버 상태를 볼 수 있습니다.
@@ -89,6 +95,12 @@
 1. In game, **F12 → `CompoundingPerf.Client`** shows every feature, in **Korean or English** (`00. Status · language`); hover an entry for its description.
 2. A change is **applied on the server 0.8 s later**, and saved into the server's `config.json` so it stays after a server restart. No restart needed.
 3. The `00. Status · language` block at the top shows the server connection, server memory and the last post-raid cleanup result.
+
+- **Settings in the SPT launcher's "mod pages" (new)**
+
+1. **CompoundingPerf** is listed in the SPT launcher's **mod pages**. It shows the server status (server memory, last post-raid cleanup) and every setting.
+2. It works **without the game running** — the server is enough. Changes apply at once and are saved to config.json. Korean/English button, search and "Reset" buttons.
+3. On this PC it just opens; from another PC it needs the SPT web panel login, and only an administrator can change settings.
 
 - **Also from RAM Cleaner's web page (with RAM Cleaner zzap 2.12.0)**
 

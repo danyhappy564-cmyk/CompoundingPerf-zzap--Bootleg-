@@ -32,6 +32,7 @@
   <ItemGroup>
     <!-- Compile-include shared model records from the server project. -->
     <Compile Include="..\Models.cs" Link="Models.cs" />
+    <Compile Include="..\SettingsCatalog.cs" Link="SettingsCatalog.cs" />
     <Compile Include="..\FrameStatsMath.cs" Link="FrameStatsMath.cs" />
   </ItemGroup>
 

@@ -17,7 +17,7 @@ namespace CompoundingPerf;
 /// <summary>SPT mod metadata. No package.json — this record replaces it. 4.1 swapped the
 /// abstract <c>AbstractModMetadata</c> base for the <c>IModMetadata</c> interface and
 /// added <c>HasPrepatcher</c>.</summary>
-public record ModMetadata : IModMetadata
+public record ModMetadata : IModMetadata, SPTarkov.Server.Web.IModBlazorMetadata
 {
     public string ModGuid { get; init; } = CompoundingPerfMod.ModGuid;
     public string Name { get; init; } = "CompoundingPerf";
@@ -31,6 +31,11 @@ public record ModMetadata : IModMetadata
     public List<string>? Incompatibilities { get; init; }
     public Dictionary<string, SemanticVersioning.Range>? ModDependencies { get; init; }
     public string? Url { get; init; }
+
+    // The launcher's / SPT web panel's "mod pages" list links here (Web/WebPageController).
+    public string? WWWRootUrl { get; init; }
+    public string? HomePage { get; init; } = "/compoundingperf";
+    public string? HomePageDescription { get; init; } = "서버 최적화 설정 · Server optimisation settings";
 }
 
 /// <summary>
