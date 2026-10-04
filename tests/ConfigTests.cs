@@ -22,6 +22,13 @@ public class ConfigTests
         // Must stay above SPT's 60s save tick or the dirty-skip never actually fires.
         Assert.True(c.Server.SaveDirtyTracking.ForceSaveIntervalSeconds > 60);
 
+        // 2.1: post-raid cleanup on (never costs more than vanilla's raid-start collect),
+        // debug log opt-in.
+        Assert.True(c.Server.PostRaidCleanup.Enabled);
+        Assert.True(c.Server.PostRaidCleanup.QuietSeconds > 0);
+        Assert.False(c.Debug.Enabled);
+        Assert.True(c.Debug.SlowRequestMs > 0);
+
         // Telemetry off by default — opt-in is intentional.
         Assert.False(c.Telemetry.Enabled);
         Assert.False(c.Telemetry.TimingEnabled);

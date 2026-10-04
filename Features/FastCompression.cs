@@ -44,6 +44,8 @@ internal static class FastCompression
 
     private static readonly string[] TargetMethods = ["SendZlibJsonAsync", "SendStreamedJsonAsync"];
 
+    public static string Status { get; private set; } = "not installed";
+
     public static void Apply(Harmony harmony, ISptLogger<CompoundingPerfMod> logger)
     {
         var transpiler = new HarmonyMethod(AccessTools.Method(typeof(FastCompression), nameof(Transpiler)));
@@ -71,6 +73,8 @@ internal static class FastCompression
                 logger.Warning($"[CompoundingPerf/S9] no ZLibStream level operand found in {name} — that response path stays at vanilla compression.");
             }
         }
+
+        Status = _rewrites == 0 ? "inactive (no ZLibStream level found)" : $"ok ({_rewrites} of {TargetMethods.Length} response paths)";
     }
 
     private static int _rewrites;

@@ -44,6 +44,8 @@ internal static class CalmNotifier
     private static NotifierHelper? _notifierHelper;
     private static NotificationService? _notificationService;
 
+    public static string Status { get; private set; } = "not installed";
+
     public static void Apply(Harmony harmony, NotifierHelper notifierHelper, NotificationService notificationService, ISptLogger<CompoundingPerfMod> logger)
     {
         _notifierHelper = notifierHelper;
@@ -52,11 +54,13 @@ internal static class CalmNotifier
         var target = AccessTools.Method(typeof(NotifierController), nameof(NotifierController.NotifyAsync));
         if (target is null)
         {
+            Status = "inactive (NotifierController.NotifyAsync not found)";
             logger.Warning("[CompoundingPerf/S13] NotifierController.NotifyAsync not found — SPT internals moved. Feature inactive.");
             return;
         }
 
         harmony.Patch(target, prefix: new HarmonyMethod(AccessTools.Method(typeof(CalmNotifier), nameof(NotifyPrefix))));
+        Status = "ok";
     }
 
     private static bool NotifyPrefix(MongoId sessionId, CancellationToken cancellationToken, ref Task<List<WsNotificationEvent>> __result)

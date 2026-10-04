@@ -28,11 +28,14 @@ namespace CompoundingPerf.Features;
 /// </summary>
 internal static class SaveDirtyTracking
 {
+    public static string Status { get; private set; } = "not installed";
+
     public static void Apply(Harmony harmony, ISptLogger<CompoundingPerfMod> logger)
     {
         var save = AccessTools.Method(typeof(SaveServer), nameof(SaveServer.SaveProfileAsync));
         if (save is null)
         {
+            Status = "inactive (SaveProfileAsync not found)";
             logger.Warning("[CompoundingPerf/S11] SaveServer.SaveProfileAsync not found — SPT internals moved. Dirty-tracking inactive.");
             return;
         }
@@ -42,12 +45,14 @@ internal static class SaveDirtyTracking
         {
             // Without the marking half every session would look clean forever, which
             // would drop real saves. Refuse to install the skip on its own.
+            Status = "inactive (GetResponseObjectAsync not found)";
             logger.Warning("[CompoundingPerf/S11] HttpRouter.GetResponseObjectAsync not found — cannot observe requests, so the save skip would be unsafe. Dirty-tracking inactive.");
             return;
         }
 
         harmony.Patch(route, prefix: new HarmonyMethod(AccessTools.Method(typeof(SaveDirtyTracking), nameof(MarkRequestPrefix))));
         harmony.Patch(save, prefix: new HarmonyMethod(AccessTools.Method(typeof(SaveDirtyTracking), nameof(SkipCleanSavePrefix))));
+        Status = "ok";
     }
 
     /// <summary>Observes every routed request and marks the session dirty unless the path

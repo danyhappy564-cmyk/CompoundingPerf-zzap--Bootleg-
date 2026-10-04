@@ -1,4 +1,5 @@
 using System.Reflection;
+using CompoundingPerf.Diagnostics;
 using CompoundingPerf.Telemetry;
 using HarmonyLib;
 using SPTarkov.Common.Models.Logging;
@@ -36,10 +37,13 @@ internal static class CalmRagfair
         AccessTools.Method(typeof(RagfairServer), "ProcessExpiredFleaOffers")
         ?? throw new MissingMethodException("RagfairServer.ProcessExpiredFleaOffers not found — SPT internals moved");
 
+    public static string Status { get; private set; } = "not installed";
+
     public static void Apply(Harmony harmony, ISptLogger<CompoundingPerfMod> logger)
     {
         var target = Target;
         var patched = harmony.Patch(target, transpiler: new HarmonyMethod(AccessTools.Method(typeof(CalmRagfair), nameof(Transpiler))));
+        Status = _rewrites == 0 ? "inactive (GC.Collect call not found)" : patched is null ? "inactive (Harmony returned nothing)" : $"ok ({_rewrites} call site)";
 
         // A transpiler that matched nothing leaves the method byte-identical and would
         // silently do nothing at runtime, so say whether the rewrite actually landed.
@@ -65,10 +69,13 @@ internal static class CalmRagfair
         if (IsEnabled)
         {
             TelemetryHub.Increment("s8.ragfair.collects_skipped");
+            DebugLog.Write("S8", $"flea offers expired — skipped vanilla's forced blocking gen{generation} collect | heap {ServerStats.Mb(GC.GetTotalMemory(false))} MB");
             return;
         }
 
+        var start = System.Diagnostics.Stopwatch.GetTimestamp();
         GC.Collect(generation, mode, blocking, compacting);
+        DebugLog.Write("S8", $"flea offers expired — vanilla forced collect ran (feature off): {RequestTracker.ToMs(System.Diagnostics.Stopwatch.GetTimestamp() - start):0} ms");
     }
 
     public static void Configure(RagfairCalmUpdatesOptions options, ISptLogger<CompoundingPerfMod> logger)

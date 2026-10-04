@@ -48,6 +48,8 @@ internal static class IsolatedBotRandomisation
 
     private static ICloner? _cloner;
 
+    public static string Status { get; private set; } = "not installed";
+
     public static void Apply(Harmony harmony, ICloner cloner, ISptLogger<CompoundingPerfMod> logger)
     {
         _cloner = cloner;
@@ -55,11 +57,13 @@ internal static class IsolatedBotRandomisation
         var target = AccessTools.Method(typeof(BotHelper), nameof(BotHelper.GetBotRandomizationDetails));
         if (target is null)
         {
+            Status = "inactive (GetBotRandomizationDetails not found)";
             logger.Warning("[CompoundingPerf/S12] BotHelper.GetBotRandomizationDetails not found — SPT internals moved. Feature inactive.");
             return;
         }
 
         harmony.Patch(target, postfix: new HarmonyMethod(AccessTools.Method(typeof(IsolatedBotRandomisation), nameof(ClonePostfix))));
+        Status = "ok";
     }
 
     private static void ClonePostfix(ref RandomisationDetails? __result)

@@ -1,6 +1,6 @@
 {
-  "_comment": "CompoundingPerf — toggle each optimization independently. Telemetry off by default.",
-  "_MasterEnabled_note": "One-switch A/B toggle for benchmarking: false installs NO patches at all (server + client) regardless of the flags below. The FrameStats recorder stays on either way, so with/without comparisons are a single flip apart. Changing this needs a server restart; the individual Enabled flags below take effect on the next call.",
+  "_comment": "CompoundingPerf — toggle each optimization independently. Debug log off by default. Every change here needs a server restart.",
+  "_MasterEnabled_note": "One-switch A/B toggle for benchmarking: false installs NO patches at all (server + client) regardless of the flags below. The FrameStats recorder stays on either way, so with/without comparisons are a single flip apart. Changing this (or anything else in this file) needs a server restart — the file is read once at startup.",
   "MasterEnabled": true,
 
   "_retired_in_2_0": "S1 ProfileSaveDebouncer, S2 ResponseCache, S6 ThreadSafeRandom, S7 ResponseSanitizer and S10 ThreadSafeCaches were removed because SPT 4.1 does each of those jobs itself — see the README for the per-feature evidence. Leaving their old keys in this file is harmless; they are simply ignored.",
@@ -25,6 +25,14 @@
       "Enabled": true,
       "Mode": "Background"
     },
+    "_PostRaidCleanup_note": "NEW in 2.1 (S16). Vanilla's raid-start collect is Aggressive, which also hands free memory back to Windows; RaidStartGc's Background mode keeps the loading screen fast but stops that. This runs the aggressive collect after a raid instead — DelaySeconds after the raid-end request, once no player request has arrived for QuietSeconds (pings/notifier polls do not count), or after MaxWaitSeconds regardless. Skipped when the GC has committed less than MinCommittedMb, or when a new raid starts first. One line per cleanup in the server console.",
+    "PostRaidCleanup": {
+      "Enabled": true,
+      "DelaySeconds": 30,
+      "QuietSeconds": 3,
+      "MaxWaitSeconds": 120,
+      "MinCommittedMb": 512
+    },
     "_IsolatedBotRandomisation_note": "Fixes a vanilla bug: night-raid equipment modifiers are written into SHARED bot config — they compound per generated bot, persist across raids until restart, and race across parallel bot generation. Still present in 4.1.5. With this on, every bot gets a private copy and the modifier applies exactly once.",
     "IsolatedBotRandomisation": {
       "Enabled": true
@@ -43,12 +51,12 @@
     }
   },
 
-  "Telemetry": {
+  "_Debug_note": "NEW in 2.1. Verification log, off by default: user/logs/CompoundingPerf/CompoundingPerf-debug-<date>-<time>.log (one file per server start, KeepFiles newest kept). Startup self-check (did each patch land), every forced collect S8/S15 touched, raid start/end timing, per-raid memory/GC summary, slowest endpoints, bot generation timing, and a periodic summary every SummaryIntervalMinutes (0 = off). SlowRequestMs: requests at least this slow are listed one by one. Needs a server restart to change. Replaces the old Telemetry section, which 2.0 never actually wired up.",
+  "Debug": {
     "Enabled": false,
-    "DumpEveryNRaids": 10,
-    "DumpOnRaidEnd": true,
-    "DumpOnServerShutdown": true,
-    "TimingEnabled": false
+    "SummaryIntervalMinutes": 5,
+    "SlowRequestMs": 250,
+    "KeepFiles": 10
   },
 
   "Compat": {

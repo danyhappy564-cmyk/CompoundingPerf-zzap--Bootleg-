@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.1.0 — 2026-10-04
+
+**Added**
+- **S16 PostRaidCleanup** (on by default). S15's Background mode keeps the raid-start
+  response fast, but vanilla's Aggressive collect was also what handed free heap back to
+  Windows between raids. S16 runs that same collect after `EndLocalRaidAsync`: after
+  `DelaySeconds` (30), once no player request has arrived for `QuietSeconds` (3) — pings,
+  keepalives and notifier polls do not count — or after `MaxWaitSeconds` (120) regardless.
+  Dropped if a new raid starts first; skipped below `MinCommittedMb` (512). One console line
+  per cleanup with heap / committed / working-set before and after and the pause.
+- **Debug log** (off by default, `Debug.Enabled`). One file per server start in
+  `user/logs/CompoundingPerf/`: startup self-check (patch landed + config state per
+  feature), S8/S15 collect decisions with timing, raid-start response time, per-raid
+  memory/GC/allocation summary, slowest endpoints per period, slow requests, bot
+  generation batches with per-bot time, periodic summary.
+
+**Fixed**
+- The `Telemetry` section did nothing in 2.0 — no code read `Enabled` / `Dump*`. Removed
+  from config.json (old keys are ignored), superseded by `Debug`.
+- Bench sampler read S8/S11 counters under names nothing increments, so both always
+  reported 0.
+- Docs: install path is `SPT_Runtime/user/mods`; config.json is read once at startup, so
+  every change needs a server restart (the config comment said otherwise).
+
+**Verified** against the real 4.1.5 server assembly in-process: all 12 patches bind,
+transpiler counts 1 / 2 / 1, and the new hooks were driven end to end (request timing,
+raid start/end bookkeeping, bot generation, S16 collect). Not yet run on a live server.
+
 ## 2.0.0 — SPT 4.1
 
 Ported to SPT 4.1.5. Six of the eleven features are gone, five of them because 4.1 does

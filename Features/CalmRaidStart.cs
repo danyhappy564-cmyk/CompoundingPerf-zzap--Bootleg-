@@ -1,5 +1,7 @@
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Diagnostics;
+using CompoundingPerf.Diagnostics;
 using CompoundingPerf.Telemetry;
 using HarmonyLib;
 using SPTarkov.Common.Models.Logging;
@@ -42,11 +44,14 @@ internal static class CalmRaidStart
 
     private static int _rewrites;
 
+    public static string Status { get; private set; } = "not installed";
+
     public static void Apply(Harmony harmony, ISptLogger<CompoundingPerfMod> logger)
     {
         var stub = AccessTools.Method(typeof(LocationLifecycleService), nameof(LocationLifecycleService.StartLocalRaidAsync));
         if (stub is null)
         {
+            Status = "inactive (StartLocalRaidAsync not found)";
             logger.Warning("[CompoundingPerf/S15] LocationLifecycleService.StartLocalRaidAsync not found — SPT internals moved. Feature inactive.");
             return;
         }
@@ -55,12 +60,14 @@ internal static class CalmRaidStart
         var moveNext = AccessTools.AsyncMoveNext(stub);
         if (moveNext is null)
         {
+            Status = "inactive (not an async state machine)";
             logger.Warning("[CompoundingPerf/S15] StartLocalRaidAsync is no longer an async state machine — cannot reach its IL. Feature inactive.");
             return;
         }
 
         harmony.Patch(moveNext, transpiler: new HarmonyMethod(AccessTools.Method(typeof(CalmRaidStart), nameof(Transpiler))));
 
+        Status = _rewrites == 0 ? "inactive (GC.Collect call not found)" : $"ok ({_rewrites} call site)";
         if (_rewrites == 0)
         {
             logger.Warning("[CompoundingPerf/S15] no GC.Collect call found in StartLocalRaidAsync — SPT may have removed it already. Feature inactive.");
@@ -74,20 +81,30 @@ internal static class CalmRaidStart
     /// arguments vanilla already pushed onto the stack stay valid.</summary>
     public static void MaybeCollect(int generation, GCCollectionMode mode, bool blocking, bool compacting)
     {
-        switch (Mode)
+        var current = Mode;
+        var start = Stopwatch.GetTimestamp();
+        switch (current)
         {
             case RaidStartGcMode.Skip:
                 TelemetryHub.Increment("s15.raidstart.collects_skipped");
-                return;
+                break;
 
             case RaidStartGcMode.Background:
                 TelemetryHub.Increment("s15.raidstart.collects_backgrounded");
                 GC.Collect(generation, GCCollectionMode.Optimized, blocking: false, compacting: false);
-                return;
+                break;
 
             default:
                 GC.Collect(generation, mode, blocking, compacting);
-                return;
+                break;
+        }
+
+        if (DebugLog.Enabled)
+        {
+            // With Vanilla this is the time the loading screen waited on the collect; with
+            // Background it should be near zero. Flip Mode to compare.
+            DebugLog.Write("S15", $"raid-start collect (vanilla asks: gen{generation} {mode}, blocking={blocking}, compacting={compacting}) → {current}: " +
+                                  $"held the response for {RequestTracker.ToMs(Stopwatch.GetTimestamp() - start):0} ms | heap now {ServerStats.Mb(GC.GetTotalMemory(false))} MB");
         }
     }
 

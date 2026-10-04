@@ -16,7 +16,7 @@ namespace CompoundingPerf.Features;
 /// the HTTP router and marks a session dirty for ANY request whose path is not in a small
 /// known-pure whitelist (keepalives, pings, notifier long-polls, the static data
 /// endpoints). Unknown paths are assumed mutating. A clean session still gets a real save every
-/// <c>ForceSaveIntervalSeconds</c> (default 60) to persist server-internal changes that
+/// <c>ForceSaveIntervalSeconds</c> (default 300) to persist server-internal changes that
 /// don't arrive via HTTP (hideout production progress, insurance returns) — so the
 /// worst-case persistence window for purely passive changes is the force interval,
 /// versus one vanilla tick. Player-driven changes always travel through a non-pure

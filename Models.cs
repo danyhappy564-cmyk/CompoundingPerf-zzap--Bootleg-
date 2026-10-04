@@ -12,6 +12,7 @@ public record CompoundingPerfConfig
 
     public ServerToggles Server { get; set; } = new();
     public ClientToggles Client { get; set; } = new();
+    public DebugOptions Debug { get; set; } = new();
     public TelemetryOptions Telemetry { get; set; } = new();
     public CompatOptions Compat { get; set; } = new();
 }
@@ -24,6 +25,7 @@ public record ServerToggles
     public IsolatedBotRandomisationOptions  IsolatedBotRandomisation { get; set; } = new();
     public CalmNotifierOptions              CalmNotifier             { get; set; } = new();
     public RaidStartGcOptions               RaidStartGc              { get; set; } = new();
+    public PostRaidCleanupOptions           PostRaidCleanup          { get; set; } = new();
 
     // Retired in 2.0 because SPT 4.1 does the job itself, verified against the 4.1.5
     // server assembly rather than assumed:
@@ -113,6 +115,53 @@ public record RaidStartGcOptions
     public string Mode { get; set; } = "Background";
 }
 
+public record PostRaidCleanupOptions
+{
+    // S16 (new in 2.1): vanilla's raid-start collect (see S15) is Aggressive, which also
+    // decommits free heap back to the OS. Making it background (S15's default) keeps the
+    // loading screen fast but means the server no longer hands memory back between raids.
+    // This puts that one aggressive collect back at a moment nobody is waiting on: after a
+    // raid ends, once the server has gone quiet (the player is reading the post-raid
+    // screens), and only when the heap is big enough to be worth it.
+    public bool Enabled { get; set; } = true;
+
+    /// <summary>Seconds after the raid-end request before the cleanup is considered.</summary>
+    public int DelaySeconds { get; set; } = 30;
+
+    /// <summary>The server must have had no player requests (pings and notifier polls do not
+    /// count) for this long before the collect runs, so it does not stall a menu action.</summary>
+    public int QuietSeconds { get; set; } = 3;
+
+    /// <summary>Give up waiting for a quiet moment after this long and run anyway — vanilla
+    /// paid the same collect with the player on a loading screen, so this is never worse.</summary>
+    public int MaxWaitSeconds { get; set; } = 120;
+
+    /// <summary>Skip the collect when the server has committed less than this; a small
+    /// heap has nothing worth returning.</summary>
+    public int MinCommittedMb { get; set; } = 512;
+}
+
+public record DebugOptions
+{
+    // New in 2.1: a separate verification log, user/logs/CompoundingPerf/CompoundingPerf-debug-*.log.
+    // Startup self-check (did each patch land), every forced collect it touched, raid
+    // start/end timing, slow requests, bot generation timing, and a periodic memory/GC/
+    // feature-counter summary. Off by default; it adds one timestamp and one task
+    // continuation per HTTP request while on.
+    public bool Enabled { get; set; } = false;
+
+    /// <summary>Minutes between periodic summary lines. 0 turns the periodic summary off
+    /// (raid start/end summaries are still written).</summary>
+    public int SummaryIntervalMinutes { get; set; } = 5;
+
+    /// <summary>Requests that take at least this long (receive + route + compress + send)
+    /// are logged individually.</summary>
+    public int SlowRequestMs { get; set; } = 250;
+
+    /// <summary>How many debug log files to keep; older ones are deleted at startup.</summary>
+    public int KeepFiles { get; set; } = 10;
+}
+
 public record FastCompressionOptions
 {
     // S9: vanilla compresses every JSON response at CompressionLevel.SmallestSize —
@@ -151,6 +200,9 @@ public record FrameStatsOptions
 
 
 
+/// <summary>Retired in 2.1. The 2.0 port kept these keys but nothing ever read them except
+/// <see cref="TimingEnabled"/>, so turning telemetry on did nothing. <see cref="DebugOptions"/>
+/// replaces it. Kept so an old config.json still deserializes.</summary>
 public record TelemetryOptions
 {
     public bool Enabled { get; set; } = false;

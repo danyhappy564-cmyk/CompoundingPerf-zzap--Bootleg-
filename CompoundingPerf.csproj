@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <OutputType>Library</OutputType>
-    <Version>2.0.0</Version>
+    <Version>2.1.0</Version>
     <OutputPath>bin\$(Configuration)\$(ProjectName)\$(AssemblyName)\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 
@@ -80,7 +80,7 @@
       <PackageZipPath>$(PackageZipDir)$(AssemblyName)-$(Version).zip</PackageZipPath>
     </PropertyGroup>
     <ItemGroup>
-      <PackageFiles Include="$(OutputPath)**\*" Exclude="$(OutputPath)**\*.pdb;$(OutputPath)**\*.deps.json" />
+      <PackageFiles Include="$(OutputPath)**\*" Exclude="$(OutputPath)**\*.pdb;$(OutputPath)**\*.deps.json;$(OutputPath)**\*.staticwebassets.*.json" />
     </ItemGroup>
     <RemoveDir Directories="$(PackageStageDir)" />
     <Copy SourceFiles="@(PackageFiles)"
