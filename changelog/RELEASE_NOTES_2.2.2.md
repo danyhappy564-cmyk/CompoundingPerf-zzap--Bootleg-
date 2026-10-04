@@ -50,8 +50,9 @@
 
 - **고친 것**
 
-1. 2.0의 `Telemetry` 설정은 켜도 아무 일도 하지 않았습니다 → 디버그 로그로 바꾸고 설정에서 뺐습니다(예전 config에 남아 있어도 무시됨).
-2. 설명에 적힌 설치 경로(`SPT\user\mods` → `SPT_Runtime\user\mods`)와 "설정이 재시작 없이 바로 적용된다"는 틀린 설명을 바로잡았습니다(이제는 F12로 바꾸면 실제로 바로 적용).
+1. **게임 F12 설정 화면이 서버에 연결하지 못하던 문제** — 실제 게임 로그에서 "서버 주소를 못 찾음"(`no -config BackendUrl launch argument`)이 확인됐습니다. 이제 SPT가 이미 알고 있는 서버 주소를 그대로 써서 연결합니다(RAM 클리너 웹 페이지의 '서버 최적화' 탭도 같이 해결).
+2. 2.0의 `Telemetry` 설정은 켜도 아무 일도 하지 않았습니다 → 디버그 로그로 바꾸고 설정에서 뺐습니다(예전 config에 남아 있어도 무시됨).
+3. 설명에 적힌 설치 경로(`SPT\user\mods` → `SPT_Runtime\user\mods`)와 "설정이 재시작 없이 바로 적용된다"는 틀린 설명을 바로잡았습니다(이제는 F12로 바꾸면 실제로 바로 적용).
 
 - **다른 모드와 같이 쓸 때 (코드로 대조함)**
 
@@ -61,7 +62,7 @@
 
 - **알려진 문제 / 주의**
 
-1. 이번 버전은 실제 서버를 오래 돌려 본 테스트를 아직 거치지 않았습니다(코드 대조와 테스트 환경 확인까지). 이상하면 F12에서 해당 기능(S16, S15 순서로)을 끄면 바로 적용됩니다.
+1. 실제 서버에서 확인한 것(2026-10-04~05 로그): 서버 기능 전부 설치(S8·S9·S12·S13·S15·S16). 이번 버전은 실제 서버를 오래 돌려 본 테스트는 아직 거치지 않았습니다(코드 대조와 테스트 환경 확인까지). 이상하면 F12에서 해당 기능(S16, S15 순서로)을 끄면 바로 적용됩니다.
 2. FIKA 환경은 확인하지 않았습니다.
 3. 모든 기능을 한 번에 끄는 `MasterEnabled` 는 F12에 없습니다. `config.json`에서 바꾸고 서버를 재시작해야 합니다.
 
@@ -126,8 +127,9 @@
 
 - **Fixes**
 
-1. 2.0's `Telemetry` settings did nothing even when turned on → replaced by the debug log and removed (old keys in your config are ignored).
-2. Corrected the install path in the docs (`SPT\user\mods` → `SPT_Runtime\user\mods`) and the wrong claim that settings applied without a restart (with the F12 page they now really do).
+1. **The in-game F12 page could not reach the server** — a real game log showed "no server address found" (`no -config BackendUrl launch argument`). It now uses the server address SPT itself already knows (this also fixes the "Server optimisation" tab on RAM Cleaner's web page).
+2. 2.0's `Telemetry` settings did nothing even when turned on → replaced by the debug log and removed (old keys in your config are ignored).
+3. Corrected the install path in the docs (`SPT\user\mods` → `SPT_Runtime\user\mods`) and the wrong claim that settings applied without a restart (with the F12 page they now really do).
 
 - **With other mods (checked against their code)**
 
@@ -137,7 +139,7 @@
 
 - **Known issues / notes**
 
-1. This release hasn't had a long run on a real server yet (code review and test-environment checks only). If anything seems off, switch features off in F12 (S16 first, then S15) — it applies immediately.
+1. Confirmed on a real server (2026-10-04/05 logs): every server feature installs (S8, S9, S12, S13, S15, S16). This release hasn't had a long run on a real server yet (code review and test-environment checks only). If anything seems off, switch features off in F12 (S16 first, then S15) — it applies immediately.
 2. Not tested with FIKA.
 3. `MasterEnabled` (turn everything off at once) is not in F12; change it in `config.json` and restart the server.
 

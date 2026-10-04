@@ -2,6 +2,11 @@
 
 ## 2.2.2 — 2026-10-04
 
+**Fixed** (folded in before release)
+- Client F12 page never reached the server in the real game (`no -config BackendUrl launch
+  argument`): `ServerLink` now takes spt-common's `RequestHandler.Host` (reflection) and falls
+  back to a lenient read of the launch argument (quotes may be stripped).
+
 **Added** (folded in before release)
 - Launcher / SPT web panel mod page: `ModMetadata` implements `IModBlazorMetadata` (HomePage
   `/compoundingperf`); `Web/WebPageController` serves one embedded HTML page plus `api/state` and

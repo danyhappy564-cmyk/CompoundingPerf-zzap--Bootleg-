@@ -21,14 +21,27 @@ internal static class ServerLink
 
     private static string? FindBackend()
     {
+        // SPT's own answer first: spt-common has already parsed the launch argument (RequestHandler.Host).
+        // Read by reflection so this plugin still needs no spt-common reference.
+        try
+        {
+            var host = Type.GetType("SPT.Common.Http.RequestHandler, spt-common")?
+                .GetField("Host", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)?.GetValue(null) as string;
+            if (!string.IsNullOrEmpty(host))
+            {
+                return host!.TrimEnd('/');
+            }
+        }
+        catch (Exception)
+        {
+            // fall back to reading the argument ourselves
+        }
+
+        // The launcher's -config={...} JSON can arrive with its quotes stripped by Windows argument parsing
+        // ({BackendUrl:https://127.0.0.1:6969,...}), which spt-common's lenient JSON reader still accepts.
         foreach (var arg in Environment.GetCommandLineArgs())
         {
-            if (!arg.StartsWith("-config=", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            var match = Regex.Match(arg, "\"BackendUrl\"\\s*:\\s*\"([^\"]+)\"");
+            var match = Regex.Match(arg, "BackendUrl[\"']?\\s*:\\s*[\"']?([^\"',}\\s]+)");
             if (match.Success)
             {
                 return match.Groups[1].Value.TrimEnd('/');

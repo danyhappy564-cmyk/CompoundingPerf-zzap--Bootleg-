@@ -28,6 +28,10 @@
 
 ## 변경 이력 (KST)
 
+### v2.2.2 추가 — 2026-10-05 (F12 서버 연결 고침)
+- 실게임 로그에서 F12 플러그인이 서버 주소를 못 찾는 것 확인(`[F12] reading settings failed: no -config BackendUrl launch argument`) →
+  `ServerLink`가 SPT가 이미 읽어 둔 주소(`spt-common`의 `RequestHandler.Host`, 리플렉션)를 먼저 쓰고, 실행 인자는 따옴표가 빠진 형태까지 읽도록 수정. Mono로 두 인자 형태 확인.
+
 ### v2.2.2 추가 — 2026-10-04 21:25 (SPT 런처 '모드 페이지'에 등록)
 - **런처 / SPT 웹 패널의 '모드 페이지' 목록에 'CompoundingPerf'** 가 뜹니다(`IModBlazorMetadata`, 주소 `/compoundingperf`).
   서버가 직접 그리는 페이지라 **게임을 켜지 않아도** 서버 상태(메모리·마지막 레이드 후 정리)를 보고 설정 18개를 바로 바꿀 수 있습니다(F12와 같은 경로: 즉시 적용 + config.json 저장).
