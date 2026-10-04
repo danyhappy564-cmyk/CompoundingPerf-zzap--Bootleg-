@@ -2,6 +2,16 @@
 
 ## 2.2.2 — 2026-10-04
 
+**Added** (folded in before release)
+- F12 page in Korean or English: `00. Status · language` → `Language`. Categories, names,
+  descriptions and status lines switch; the server also sends `LastCleanupEn`.
+- `CompoundingPerf.Client.StatusBridge` (connected, status lines, last result, refresh) for other
+  plugins. RAM Cleaner (zzap) 2.12.0 uses it and this plugin's F12 entries for a "Server
+  optimisation" tab on its web page (http://127.0.0.1:6977/server), and sets this plugin's language
+  when its own changes. No reference either way (reflection).
+- Compression level / S15 mode choices carry both languages (`빠름 · Fastest (추천)`); the server's
+  value is read back on connect, so older stored labels don't matter.
+
 **Changed**
 - F12 plugin without the server mod (route answers 404): status says so and the plugin re-checks
   every 5 minutes instead of every 10 seconds; the "read again" button still checks at once.

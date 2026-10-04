@@ -56,6 +56,7 @@ public class SettingsRouter(JsonUtil jsonUtil) : StaticRouter(jsonUtil,
             CommittedMb = ServerStats.Mb(stats.CommittedBytes),
             ProcessMb = ServerStats.Mb(stats.WorkingSetBytes),
             LastCleanup = Features.PostRaidCleanup.LastResult,
+            LastCleanupEn = Features.PostRaidCleanup.LastResultEn,
             DebugLogPath = DebugLog.Enabled ? DebugLog.FilePath : null,
         });
     }

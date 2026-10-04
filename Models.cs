@@ -246,5 +246,6 @@ public record ServerSettingsResponse
     public long CommittedMb { get; set; }
     public long ProcessMb { get; set; }
     public string? LastCleanup { get; set; }
+    public string? LastCleanupEn { get; set; }
     public string? DebugLogPath { get; set; }
 }

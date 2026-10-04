@@ -16,9 +16,15 @@
 
 - **F12 설정 화면 (새로 생김)**
 
-1. 게임에서 **F12 → `CompoundingPerf.Client`** 에서 모든 기능을 한글로 보고 바꿀 수 있습니다. 항목에 마우스를 올리면 설명이 나옵니다.
+1. 게임에서 **F12 → `CompoundingPerf.Client`** 에서 모든 기능을 보고 바꿀 수 있습니다. **한국어 / English** 를 고를 수 있고(`00. 상태 · 언어`), 항목에 마우스를 올리면 설명이 나옵니다.
 2. 값을 바꾸면 **0.8초 뒤 서버에 바로 적용**되고, 서버의 `config.json`에도 저장돼서 다음에 서버를 켜도 유지됩니다. 서버 재시작이 필요 없습니다.
-3. 맨 위 `00. 상태` 칸에 서버 연결 여부, 서버 메모리, 마지막 레이드 후 정리 결과가 나옵니다.
+3. 맨 위 `00. 상태 · 언어` 칸에 서버 연결 여부, 서버 메모리, 마지막 레이드 후 정리 결과가 나옵니다.
+
+- **RAM 클리너 웹 페이지에서도 설정 (RAM 클리너 zzap 2.12.0과 같이 쓸 때)**
+
+1. RAM 클리너를 같이 쓰면 게임을 켜 둔 채 브라우저에서 **`http://127.0.0.1:6977/server`** ('서버 최적화' 탭)로 이 모드의 설정과 서버 상태를 볼 수 있습니다.
+2. 바꾸는 방식은 F12와 같습니다(0.8초 뒤 서버에 적용, config.json 저장). 언어도 RAM 클리너를 따라갑니다.
+3. RAM 클리너 없이 이 모드만 써도 그대로 동작합니다. 웹 페이지가 필요하면 RAM 클리너(zzap) 2.12.0을 받아 주세요.
 
 - **레이드 후 서버 정리 (새 기능 S16, 기본 켜짐)**
 
@@ -43,7 +49,7 @@
 
 - **다른 모드와 같이 쓸 때 (코드로 대조함)**
 
-1. **RAM 클리너(zzap)** 와 같이 써도 되고 따로 써도 됩니다. 서로를 찾지 않고, 레이드 후 정리 시점도 게임 20초 / 서버 30초 이후로 나뉘어 겹치지 않습니다.
+1. **RAM 클리너(zzap)** 와 같이 써도 되고 따로 써도 됩니다. 레이드 후 정리 시점이 게임 20초 / 서버 30초 이후로 나뉘어 겹치지 않고, 같이 쓰면 RAM 클리너 웹 페이지에 '서버 최적화' 탭이 생깁니다.
 2. **APBS · ABPS · SAIN · ORBIT** 과 겹치는 부분이 없는 것을 확인했습니다.
 3. F12 플러그인만 깔고 서버 모드가 없으면 상태 칸에 "서버 모드가 없습니다"라고 나오고, 5분마다만 다시 확인합니다.
 
@@ -80,9 +86,15 @@
 
 - **F12 settings page (new)**
 
-1. In game, **F12 → `CompoundingPerf.Client`** shows every feature with Korean names; hover an entry for its description.
+1. In game, **F12 → `CompoundingPerf.Client`** shows every feature, in **Korean or English** (`00. Status · language`); hover an entry for its description.
 2. A change is **applied on the server 0.8 s later**, and saved into the server's `config.json` so it stays after a server restart. No restart needed.
-3. The `00. 상태` (status) block at the top shows the server connection, server memory and the last post-raid cleanup result.
+3. The `00. Status · language` block at the top shows the server connection, server memory and the last post-raid cleanup result.
+
+- **Also from RAM Cleaner's web page (with RAM Cleaner zzap 2.12.0)**
+
+1. With RAM Cleaner installed, open **`http://127.0.0.1:6977/server`** (the "Server optimisation" tab) in your browser while the game runs to see this mod's settings and the server status.
+2. Changes work exactly like F12 (sent to the server 0.8 s later, saved to config.json). The language follows RAM Cleaner's.
+3. This mod works the same without RAM Cleaner; get RAM Cleaner (zzap) 2.12.0 if you want the web page.
 
 - **Post-raid server cleanup (new feature S16, on by default)**
 
@@ -107,7 +119,7 @@
 
 - **With other mods (checked against their code)**
 
-1. Works with or without **RAM Cleaner (zzap)**. Neither looks for the other, and their post-raid cleanups are split (game at 20 s, server at 30 s+) so they don't overlap.
+1. Works with or without **RAM Cleaner (zzap)**. Their post-raid cleanups are split (game at 20 s, server at 30 s+) so they don't overlap, and with both installed RAM Cleaner's web page gets a "Server optimisation" tab.
 2. Checked for overlaps with **APBS · ABPS · SAIN · ORBIT** — none.
 3. With only the F12 plugin installed and no server mod, the status block says the server mod is missing and it re-checks only every 5 minutes.
 

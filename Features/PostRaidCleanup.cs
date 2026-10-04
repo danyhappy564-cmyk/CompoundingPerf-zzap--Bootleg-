@@ -32,8 +32,11 @@ internal static class PostRaidCleanup
     private static long _minCommittedBytes = 512L * 1024 * 1024;
     private static int _pending;
 
-    /// <summary>Korean one-liner about the last cleanup, shown in the client's F12 status.</summary>
+    /// <summary>One-liner about the last cleanup for the client's F12 status (Korean / English).</summary>
     public static volatile string? LastResult;
+
+    /// <inheritdoc cref="LastResult"/>
+    public static volatile string? LastResultEn;
     private static ISptLogger<CompoundingPerfMod>? _logger;
 
     public static void Configure(PostRaidCleanupOptions options, ISptLogger<CompoundingPerfMod>? logger)
@@ -105,6 +108,7 @@ internal static class PostRaidCleanup
             {
                 DebugLog.Write("S16", "skipped — a new raid started before the server went quiet");
                 LastResult = $"{DateTime.Now:HH:mm} 건너뜀 (정리 전에 새 레이드 시작)";
+                LastResultEn = $"{DateTime.Now:HH:mm} skipped (a new raid started before the cleanup)";
                 return;
             }
 
@@ -127,6 +131,7 @@ internal static class PostRaidCleanup
         if (before.CommittedBytes < _minCommittedBytes)
         {
             LastResult = $"{DateTime.Now:HH:mm} 건너뜀 (서버 메모리 {ServerStats.Mb(before.CommittedBytes)} MB < 기준 {ServerStats.Mb(_minCommittedBytes)} MB)";
+            LastResultEn = $"{DateTime.Now:HH:mm} skipped (server memory {ServerStats.Mb(before.CommittedBytes)} MB < threshold {ServerStats.Mb(_minCommittedBytes)} MB)";
             DebugLog.Write("S16", $"skipped — GC committed only {ServerStats.Mb(before.CommittedBytes)} MB (threshold {ServerStats.Mb(_minCommittedBytes)} MB). {before.Memory()}");
             return;
         }
@@ -146,6 +151,7 @@ internal static class PostRaidCleanup
 
         _logger?.Info($"[CompoundingPerf/S16] post-raid cleanup: {summary}");
         LastResult = $"{DateTime.Now:HH:mm} 정리함: 서버 메모리 {ServerStats.Mb(before.WorkingSetBytes)} → {ServerStats.Mb(after.WorkingSetBytes)} MB, 멈춤 {stopwatch.ElapsedMilliseconds} ms";
+        LastResultEn = $"{DateTime.Now:HH:mm} cleaned: server memory {ServerStats.Mb(before.WorkingSetBytes)} → {ServerStats.Mb(after.WorkingSetBytes)} MB, paused {stopwatch.ElapsedMilliseconds} ms";
         DebugLog.Write("S16", $"done{(forced ? " (server never went quiet — ran after the max wait)" : string.Empty)}, waited {waited:0.0}s for quiet: {summary}");
     }
 }
