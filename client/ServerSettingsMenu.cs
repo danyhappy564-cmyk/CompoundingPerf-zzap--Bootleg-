@@ -29,6 +29,10 @@ internal sealed class ServerSettingsMenu
     private const float RetrySeconds = 10f;
     private const float RefreshSeconds = 60f;
 
+    /// <summary>Server answered but has no CompoundingPerf route (plugin installed without the
+    /// server mod, or an old server mod): nothing will change soon, so ask rarely.</summary>
+    private const float MissingModRetrySeconds = 300f;
+
     private static readonly string[] LevelLabels = ["빠름 (Fastest) · 추천", "균형 (Optimal)", "최소 크기 (SmallestSize) · 바닐라", "압축 안 함 (NoCompression)"];
     private static readonly string[] LevelValues = ["Fastest", "Optimal", "SmallestSize", "NoCompression"];
     private static readonly string[] ModeLabels = ["백그라운드 (Background) · 추천", "건너뛰기 (Skip)", "바닐라 (Vanilla)"];
@@ -77,7 +81,9 @@ internal sealed class ServerSettingsMenu
             "레이드가 끝나고 서버가 한가해지면(결과 화면을 보는 동안) 서버 메모리를 정리해 윈도우에 돌려줍니다.\n" +
             "바닐라는 같은 정리를 레이드 '시작' 때 로딩 화면에서 했습니다. 끄면 레이드 사이에 서버 메모리가 그대로 남습니다.");
         _s16Delay = Server(config, "S16 PostRaidCleanup", "DelaySeconds", c16, "레이드 끝나고 기다릴 시간 (초)", 30, 40,
-            "레이드 종료 후 이만큼 기다린 다음 정리를 시도합니다.", new AcceptableValueRange<int>(0, 600));
+            "레이드 종료 후 이만큼 기다린 다음 정리를 시도합니다.\n" +
+            "RAM 클리너도 같이 쓰면: RAM 클리너는 레이드 후 20초(기본)에 게임 쪽을 정리합니다. 둘이 겹치지 않게 이 값을 RAM 클리너보다 10초 이상 길게 두세요.",
+            new AcceptableValueRange<int>(0, 600));
         _s16Quiet = Server(config, "S16 PostRaidCleanup", "QuietSeconds", c16, "조용해야 하는 시간 (초)", 3, 30,
             "이 시간 동안 플레이어 요청(메뉴 이동, 상점 등)이 없을 때만 정리합니다. 정리하는 순간 서버가 잠깐 멈추기 때문입니다.\n" +
             "핑·알림 확인 같은 자동 요청은 세지 않습니다.", new AcceptableValueRange<int>(0, 60));
@@ -230,6 +236,7 @@ internal sealed class ServerSettingsMenu
         {
             ServerSettingsResponse? reply = null;
             string? error = null;
+            var missing = false;
             try
             {
                 reply = JsonConvert.DeserializeObject<ServerSettingsResponse>(ServerLink.Send(method, path, json));
@@ -240,33 +247,37 @@ internal sealed class ServerSettingsMenu
             }
             catch (Exception ex)
             {
-                error = ex is System.Net.WebException { Response: System.Net.HttpWebResponse { StatusCode: System.Net.HttpStatusCode.NotFound } }
-                    ? "서버에 CompoundingPerf 2.2.0 이상이 없습니다 (설정 주소를 모름)"
+                missing = ex is System.Net.WebException { Response: System.Net.HttpWebResponse { StatusCode: System.Net.HttpStatusCode.NotFound } };
+                error = missing
+                    ? "서버에 CompoundingPerf 서버 모드(2.2.0 이상)가 없습니다 — 이 F12 화면은 서버 모드와 같이 써야 합니다"
                     : ex.Message;
             }
 
-            _mainThread.Enqueue(() => OnReply(reply, error, isSet));
+            _mainThread.Enqueue(() => OnReply(reply, error, isSet, missing));
             Interlocked.Exchange(ref _inFlight, 0);
         });
     }
 
-    private void OnReply(ServerSettingsResponse? reply, string? error, bool isSet)
+    private void OnReply(ServerSettingsResponse? reply, string? error, bool isSet, bool missing)
     {
         if (error is not null || reply is null)
         {
-            _status = $"서버 연결 실패: {error} — {RetrySeconds:0}초 뒤 다시 시도";
-            _nextFetchAt = Now + RetrySeconds;
+            var retry = missing ? MissingModRetrySeconds : RetrySeconds;
+            _status = missing
+                ? $"{error} (5분마다 다시 확인, `서버에서 다시 읽기` 로 바로 확인)"
+                : $"서버 연결 실패: {error} — {RetrySeconds:0}초 뒤 다시 시도";
+            _nextFetchAt = Now + retry;
             if (isSet)
             {
-                // Keep the edit; it goes out again in RetrySeconds.
-                _dirtyAt = Now + RetrySeconds - DebounceSeconds;
+                // Keep the edit; it goes out again with the next attempt.
+                _dirtyAt = Now + retry - DebounceSeconds;
             }
 
             // Once per outage, not every retry.
             if (!_warned || isSet)
             {
                 _warned = true;
-                _log.LogWarning($"[F12] {(isSet ? "sending settings" : "reading settings")} failed: {error} (retrying every {RetrySeconds:0}s)");
+                _log.LogWarning($"[F12] {(isSet ? "sending settings" : "reading settings")} failed: {error} (retrying every {retry:0}s)");
             }
 
             return;

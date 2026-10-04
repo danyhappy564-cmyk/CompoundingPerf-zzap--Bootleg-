@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <Version>2.2.0</Version>
+    <Version>2.2.2</Version>
     <Authors>EchoStarz</Authors>
     <Product>CompoundingPerf.Client</Product>
     <Description>F12 (ConfigurationManager) page for the CompoundingPerf server mod's settings, applied live. Bench builds add a frame-stats recorder.</Description>

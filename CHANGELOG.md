@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.2 — 2026-10-04
+
+**Changed**
+- F12 plugin without the server mod (route answers 404): status says so and the plugin re-checks
+  every 5 minutes instead of every 10 seconds; the "read again" button still checks at once.
+- S16 delay description in F12 explains how to stagger it after RAM Cleaner's after-raid cleanup.
+- README: using it with or without RAM Cleaner (zzap). Both are independent; with defaults their
+  after-raid work is ~10 s apart (game at 20 s, server at 30 s + quiet).
+
 ## 2.2.1 — 2026-10-04
 
 **Changed**
