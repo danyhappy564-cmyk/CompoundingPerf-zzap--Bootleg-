@@ -22,10 +22,19 @@
 > 사라져서, 단순 리네임이 아니라 **기능별로 재검증하고 전달 방식을 갈아엎은** 작업입니다.
 > 기능 11개 중 6개가 빠지고 1개가 새로 들어갔습니다. 2.1에서 1개(S16)와 디버그 로그가 더 들어갔습니다.
 
-현재 기준 **SPT 4.1.5**. **서버 전용** — 게임 프로세스에는 아무것도 안 올라갑니다.
+현재 기준 **SPT 4.1.5**. 최적화는 전부 **서버 쪽**에서 일어납니다. 게임 쪽에는 **F12 설정 화면용 플러그인 하나**만
+올라가고(2.2부터), 이 플러그인은 설정을 서버에 전달하는 일만 합니다 — 게임 성능에는 영향이 없습니다.
 게임 쪽 메모리·끊김은 RAM 클리너(zzap) 몫이고, 이 모드는 **SPT 서버 프로세스** 쪽만 다룹니다.
 
 ## 변경 이력 (KST)
+
+### v2.2.0 — 2026-10-04 15:00
+- **F12 설정 화면 신규**: 게임 안에서 F12 → `CompoundingPerf.Client` 에서 모든 기능을 한글로 보고 바꿀 수 있습니다.
+  **바꾸는 즉시(0.8초 뒤) 서버에 적용**되고, 서버의 `config.json` 에도 저장돼서 다음에 서버를 켜도 유지됩니다.
+  맨 위 `00. 상태` 에 서버 연결 여부, 서버 메모리, 마지막 레이드 후 정리 결과가 나옵니다.
+- **디버그 로그를 F12에서 바로 켜고 끌 수 있음** (재시작 불필요). 켜면 상태 칸에 로그 파일 경로가 나옵니다.
+- **릴리스 zip 구성 변경**: 이제 `SPT_Runtime\…` 와 `BepInEx\…` 폴더가 들어 있어서 **`E:\SPT 4.1` 에 바로 풀면** 됩니다.
+- S11(저장 건너뛰기)을 실행 중에 켜면, 켜기 전 요청은 추적되지 않았으므로 첫 저장은 무조건 진짜로 하도록 했습니다.
 
 ### v2.1.0 — 2026-10-04 13:50
 - **S16 PostRaidCleanup 신규 (기본 켜짐)**: 레이드가 끝나고 서버가 한가해지면(결과 화면 보는 동안)
@@ -86,9 +95,31 @@ S16은 그 강한 GC를 **아무도 기다리지 않는 순간**으로 옮깁니
 **합치면 바닐라와 같은 GC를 레이드당 한 번 하되, 로딩 화면이 아니라 결과 화면에서** 하는 셈입니다.
 실행 중 잠깐(보통 수십~수백 ms) 서버 응답이 멈추지만, 그때는 보통 아무 요청도 없습니다.
 
+## F12 설정 화면 (2.2부터)
+
+게임에서 **F12 → `CompoundingPerf.Client`**. 서버 `config.json` 이 기준이라, 게임을 켜면 서버의 현재 값을 읽어 와서 보여 줍니다.
+값을 바꾸면 **0.8초 뒤 서버에 바로 적용**되고(슬라이더를 움직이는 동안은 마지막 값 한 번만 보냄) `config.json` 에도 저장됩니다.
+
+| F12 분류 | 내용 |
+|---|---|
+| 00. 상태 | 서버 연결 여부 · 서버 모드 버전 · 서버 메모리 · 마지막 레이드 후 정리 결과 · 디버그 로그 경로 · 마지막 적용 결과, `서버에서 다시 읽기` 버튼 |
+| 01. 레이드 후 서버 정리 (S16) | 사용 / 기다릴 시간 / 조용해야 하는 시간 / 최대 대기 / 최소 서버 메모리 |
+| 02. 레이드 시작 GC (S15) | 사용 / 방식 (백그라운드·건너뛰기·바닐라) |
+| 03. 플리마켓 강제 GC 제거 (S8) | 사용 |
+| 04. 응답 압축 (S9) | 사용 / 압축 수준 (빠름·균형·최소 크기·압축 안 함) |
+| 05. 봇 장비 버그 수정 (S12) | 사용 |
+| 06. 알림 대기 (S13) | 사용 |
+| 07. 저장 건너뛰기 (S11 · 위험) | 사용 / 그래도 저장하는 간격 |
+| 08. 디버그 로그 | 사용 / 요약 간격 / 느린 요청 기준 / 보관할 파일 수 |
+
+- 서버 콘솔에도 바뀐 내용이 한 줄로 찍힙니다: `F12 settings applied and saved: Server.FastCompression.Level "Fastest" → "Optimal"`
+- `MasterEnabled` 는 F12에 없습니다 — 패치 설치 여부 자체라서 `config.json` 수정 + 서버 재시작으로만 바뀝니다.
+- 서버에 연결이 안 되면 상태 칸에 이유가 나오고 10초마다 다시 시도합니다.
+- `config.json` 을 직접 고쳐도 되지만, 그때는 **서버를 재시작**해야 반영됩니다(F12로 바꾼 것만 즉시 적용).
+
 ## 디버그 로그 (확인용)
 
-`config.json` → `"Debug": { "Enabled": true }` 로 바꾸고 **서버를 재시작**하면 켜집니다.
+F12 → `08. 디버그 로그` → `사용` 을 켜면 **바로** 켜집니다(재시작 불필요). `config.json` 의 `"Debug": {{ "Enabled": true }}` 로 켜도 됩니다(재시작 필요).
 파일: `E:\SPT 4.1\SPT_Runtime\user\logs\CompoundingPerf\CompoundingPerf-debug-날짜-시간.log`
 (서버 켤 때마다 새 파일, 최근 `KeepFiles`(10)개만 보관). 서버 콘솔에도 시작할 때 경로가 한 줄 나옵니다.
 
@@ -163,8 +194,7 @@ S14는 FIKA에서 런처 응답이 바뀌는데 원인을 끝까지 설명하지
 - **S8 / S15** — 예전엔 메서드를 재구현했습니다. 지금은 `GC.Collect` **호출 명령 하나**를
   동일 시그니처 메서드 호출로 바꿉니다. 나머지 명령은 컴파일러가 뽑은 그대로 남습니다.
   동작 동일성이 "구현을 잘해서"가 아니라 **구조적으로** 보장되고, 판단이 패치가 아니라
-  메서드 안으로 들어가서, 스위치를 실행 중에 바꿀 수 있는 구조입니다 (다만 지금은 config.json을
-  시작 때 한 번만 읽으므로 실제로는 재시작해야 반영됩니다)
+  메서드 안으로 들어가서 스위치를 실행 중에 바꿀 수 있습니다 — 2.2의 F12 화면이 이걸 씁니다
 - **S9** — 예전엔 응답 전송 메서드를 통째로 대체했습니다. 지금은 `ZLibStream` 생성자에
   들어가는 `CompressionLevel` **상수 하나만** 바꿉니다
 - **S11** — `SaveProfileAsync` 에 스킵 prefix, 라우터에 **요청 경로만 읽는** prefix.
@@ -190,12 +220,15 @@ S14는 FIKA에서 런처 응답이 바뀌는데 원인을 끝까지 설명하지
 
 ## 설치
 
-- `CompoundingPerf.dll` + `config.json` → `E:\SPT 4.1\SPT_Runtime\user\mods\CompoundingPerf\`
-  (릴리스 zip을 `SPT_Runtime\user\mods\` 에 풀면 됩니다)
+릴리스 zip을 **`E:\SPT 4.1` 에 그대로 풀면** 됩니다. 들어 있는 것:
 
-BepInEx 플러그인은 없습니다. 기능마다 `Enabled` 플래그가 있어서 하나씩 끄고 켤 수 있고,
-`MasterEnabled: false` 면 패치를 아예 설치하지 않습니다 (A/B 비교용).
-**config.json은 서버 시작 때 한 번만 읽습니다 — 무엇을 바꾸든 서버 재시작이 필요합니다.**
+| 파일 | 위치 | 역할 |
+|---|---|---|
+| `CompoundingPerf.dll` + `config.json` | `SPT_Runtime\user\mods\CompoundingPerf\` | 서버 모드 (최적화 본체) |
+| `CompoundingPerf.Client.dll` | `BepInEx\plugins\CompoundingPerf.Client\` | F12 설정 화면 (없어도 서버 모드는 동작, config.json으로 설정) |
+
+2.1 이하에서 올라가는 경우 `config.json` 을 덮어써도 됩니다(설정은 F12에서 다시 맞추면 됨).
+`MasterEnabled: false` 면 패치를 아예 설치하지 않습니다 (A/B 비교용, config.json + 서버 재시작).
 
 ## 빌드
 
@@ -205,7 +238,9 @@ BepInEx 플러그인은 없습니다. 기능마다 `Enabled` 플래그가 있어
 dotnet build CompoundingPerf.csproj -c Release
 ```
 
-`$(SptRoot)\SPT_Runtime\user\mods\CompoundingPerf\` 로 dll + config.json 을 바로 복사합니다.
+`$(SptRoot)\SPT_Runtime\user\mods\CompoundingPerf\` 로 dll + config.json 을 바로 복사하고,
+`SptRoot` 에 게임 어셈블리가 있으면 클라이언트 플러그인도 빌드해서 `BepInEx\plugins\CompoundingPerf.Client\` 에 복사한 뒤
+둘을 합친 zip을 `release\` 에 만듭니다(게임 어셈블리가 없으면 서버만 든 zip + 경고).
 기본 `SptRoot` 는 `E:\SPT 4.1`, `-p:SptRoot=...` 로 덮어쓰기, `-p:SkipDeploy=true` 로 복사 생략
 (서버가 켜져 있어서 파일이 잠겨 있을 때).
 
@@ -221,13 +256,12 @@ dotnet test  CompoundingPerf.sln -c Release
 > 에러가 납니다 — 서버 dll 자체는 그래도 정상적으로 나오지만, 그럴 바엔 csproj로 빌드하는
 > 게 깔끔합니다.
 
-### `client/` 폴더는 기능이 아닙니다
+### `client/` 폴더
 
-벤치마크 도구입니다. 안의 실제 코드가 전부 `#if BENCH` 라서 `-p:Bench=true` 없이 빌드하면
-**패치가 하나도 없는 껍데기**가 나옵니다 (빌드된 dll에 `WorldTickPatch`,
-`FrameStatsRecorder` 가 아예 없고 Harmony 참조도 안 들어갑니다). 그래서 배포 단계도
-`Bench=true` 일 때만 돕니다 — 평범한 솔루션 빌드가 아무것도 안 하는 dll을
-`BepInEx\plugins\` 에 떨구지 않도록.
+2.2부터 **F12 설정 화면 플러그인**입니다(`ServerSettingsMenu.cs`, `ServerLink.cs`). 게임 패치는 없고,
+서버의 `/compoundingperf/config/get`·`/set` 주소와 평문 JSON(`requestcompressed: 0` / `responsecompressed: 0`)으로만 통신합니다.
+백엔드 주소는 게임 실행 인자 `-config={{"BackendUrl":...}}` 에서 읽습니다(`spt-common` 불필요).
+예전 벤치마크용 프레임 기록기는 그대로 `#if BENCH` 안에 있어서 `-p:Bench=true` 로 빌드할 때만 들어갑니다.
 
 서버 프로젝트는 `net10.0` + `SPTushonka.Server.Core` 4.1.5 (4.1에서 패키지 ID가
 `SPTarkov.*` → `SPTushonka.*` 로 바뀌었고, 안의 네임스페이스는 그대로입니다).
@@ -269,7 +303,8 @@ ALL PATCHES BIND
 | 폐기한 5개가 정말 4.1에 들어갔는지 | **확인** — 위 표의 근거는 전부 4.1.5 어셈블리에서 읽은 것 |
 | 2.1 추가 패치 4개(`SptHttpListener.HandleAsync`, `StartLocalRaidAsync`, `EndLocalRaidAsync`, `BotController.Generate`) | **확인** — 2.1에서 실제 4.1.5 서버 DLL에 12개 패치를 전부 걸고, 메서드를 직접 호출해 디버그 로그·S16 정리가 실제로 나오는 것까지 확인 |
 | 유닛 테스트 | **41개 통과** |
-| 실서버 구동 | **안 함** — 2.1 디버그 로그로 확인 예정 |
+| F12 ↔ 서버 (2.2) | **확인** — 실제 클라 플러그인 dll을 Mono(게임과 같은 런타임)에서 돌리고, 실제 서버 설정 라우트 코드를 띄운 HTTP 서버와 통신시켜 확인: 서버 값 읽어 오기, 두 번 바꾼 걸 한 번에 전송, 즉시 적용, config.json 저장(설명 주석 유지), 디버그 로그 즉시 켜짐, 범위 밖 값 보정 |
+| 실서버 구동 | **안 함** — 디버그 로그로 확인 예정 |
 | 인게임 성능 측정 | **안 함** — 위 성능 서술은 4.1.5 소스에서 읽은 것이고, CHANGELOG의 수치는 **4.0 기준**입니다 |
 
 ## 안 되면 여기부터 보세요

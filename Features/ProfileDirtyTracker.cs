@@ -53,6 +53,7 @@ public static class ProfileDirtyTracker
         "/client/getMetricsConfig",
         "/singleplayer/settings",
         "/files/",
+        "/compoundingperf/", // F12 settings route: edits config.json, never a profile
     ];
 
     private static readonly HashSet<string> StaticDataPaths = new(StringComparer.OrdinalIgnoreCase)
@@ -121,6 +122,14 @@ public static class ProfileDirtyTracker
         }
 
         return (DateTime.UtcNow - last).TotalSeconds < ForceSaveIntervalSeconds;
+    }
+
+    /// <summary>Forget every save stamp, so the next save of every session is a real one.
+    /// Used when the feature is switched on at runtime: requests that arrived while it was
+    /// off were never marked dirty.</summary>
+    public static void ForgetSaves()
+    {
+        LastRealSaveUtc.Clear();
     }
 
     /// <summary>Called when a real save is about to run: clears the dirty flag and stamps

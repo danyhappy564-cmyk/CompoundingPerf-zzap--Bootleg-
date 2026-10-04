@@ -11,7 +11,7 @@ namespace CompoundingPerf.Diagnostics;
 /// Debug log only: how long the server takes to build each batch of bots the client asks
 /// for (<c>BotController.Generate</c>, behind <c>/client/game/bot/generate</c>). A slow
 /// batch here is a late spawn in raid; heavy bot mods (gear variety, big presets) show up
-/// as rising per-bot times. Installed only when the debug log is on.
+/// as rising per-bot times. Always installed; does nothing while the debug log is off.
 /// </summary>
 internal static class BotGenerationTracker
 {
@@ -45,6 +45,11 @@ internal static class BotGenerationTracker
     // Observes the returned Task rather than replacing it: nothing downstream changes.
     private static void Postfix(GenerateBotsRequestData request, long __state, Task<IEnumerable<BotBase?>> __result)
     {
+        if (!DebugLog.Enabled)
+        {
+            return;
+        }
+
         string roles;
         try
         {

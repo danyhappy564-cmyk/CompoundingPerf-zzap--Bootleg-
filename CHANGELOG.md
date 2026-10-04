@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.2.0 — 2026-10-04
+
+**Added**
+- **F12 settings page** (`client/`, BepInEx plugin `CompoundingPerf.Client`). Korean
+  labels and descriptions for every Server and Debug setting; edits are debounced 0.8 s and
+  sent to a new server route, applied immediately, and written back into config.json
+  (values only, `_..._note` keys kept). The page loads the server's live values on start,
+  and a status block shows connection, server memory, the last S16 result and the debug
+  log path. Talks plain JSON over `SptHttpListener` (`requestcompressed: 0` /
+  `responsecompressed: 0`); backend URL from the `-config` launch argument.
+- Server route `/compoundingperf/config/get` and `/set` (`SettingsRouter`, `LiveConfig`).
+  Values are clamped to the same ranges as the F12 sliders, at startup too.
+- Debug log can be switched on/off at runtime; its hooks are always installed and gated.
+
+**Changed**
+- Release zip is laid out like the SPT folder (`SPT_Runtime/...` + `BepInEx/...`) and
+  carries the client plugin; the server build packages both.
+- Client plugin no longer references spt-common / spt-reflection.
+- Switching S11 on at runtime forgets earlier save stamps, so the first save after it is
+  always real (requests made while it was off were never marked dirty).
+- F12 requests count neither as player activity (S16 quiet detection) nor as dirtying.
+
+**Verified**: the client dll under Mono talking real HTTP to the real router code
+(load, debounced set, live apply, config.json save with notes kept, debug log on, clamping).
+
 ## 2.1.0 — 2026-10-04
 
 **Added**

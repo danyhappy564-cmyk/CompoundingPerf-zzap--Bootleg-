@@ -16,12 +16,14 @@ public class Plugin : BaseUnityPlugin
 {
     public const string ModGuid    = "com.echostarz.compoundingperf.client";
     public const string ModName    = "CompoundingPerf.Client";
-    public const string ModVersion = "2.0.0";
+    public const string ModVersion = "2.2.0";
 
     public static CompoundingPerfConfig LoadedConfig { get; private set; } = new();
     public static DetectedMods Mods { get; private set; } = new();
     public static ManualLogSource? Log { get; private set; }
     public static string? SptUserLogsDir { get; private set; }
+
+    private ServerSettingsMenu? _menu;
 
     private void Awake()
     {
@@ -61,12 +63,21 @@ public class Plugin : BaseUnityPlugin
             harmony.PatchAll(Assembly.GetExecutingAssembly());
 #endif
 
+            // F12 page for the server mod's settings, applied live through the server's
+            // settings route. The only release-build feature of this plugin.
+            _menu = new ServerSettingsMenu(Config, Logger);
+
             Log.LogInfo($"{ModName} ready");
         }
         catch (Exception ex)
         {
             Log.LogError($"{ModName} failed to initialize: {ex}");
         }
+    }
+
+    private void Update()
+    {
+        _menu?.Update();
     }
 
     private void OnApplicationQuit()

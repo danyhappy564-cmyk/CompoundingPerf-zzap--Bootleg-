@@ -96,16 +96,16 @@ internal static class CalmNotifier
         return [notifierHelper.GetDefaultNotification()];
     }
 
-    public static void Configure(CalmNotifierOptions options, ISptLogger<CompoundingPerfMod> logger)
+    public static void Configure(CalmNotifierOptions options, ISptLogger<CompoundingPerfMod>? logger)
     {
         IsEnabled = options.Enabled;
         if (options.Enabled)
         {
-            logger.Success("[CompoundingPerf/S13] calm notifier ACTIVE — the /notify long-poll releases its thread between checks");
+            logger?.Success("[CompoundingPerf/S13] calm notifier ACTIVE — the /notify long-poll releases its thread between checks");
         }
         else
         {
-            logger.Info("[CompoundingPerf/S13] calm notifier disabled in config");
+            logger?.Info("[CompoundingPerf/S13] calm notifier disabled in config");
         }
     }
 }

@@ -115,20 +115,20 @@ internal static class CalmRaidStart
         _ => RaidStartGcMode.Background,
     };
 
-    public static void Configure(RaidStartGcOptions options, ISptLogger<CompoundingPerfMod> logger)
+    public static void Configure(RaidStartGcOptions options, ISptLogger<CompoundingPerfMod>? logger)
     {
         Mode = options.Enabled ? ParseMode(options.Mode) : RaidStartGcMode.Vanilla;
 
         switch (Mode)
         {
             case RaidStartGcMode.Background:
-                logger.Success("[CompoundingPerf/S15] calm raid start ACTIVE — the raid-start collect is now background and non-compacting instead of blocking the response");
+                logger?.Success("[CompoundingPerf/S15] calm raid start ACTIVE — the raid-start collect is now background and non-compacting instead of blocking the response");
                 break;
             case RaidStartGcMode.Skip:
-                logger.Success("[CompoundingPerf/S15] calm raid start ACTIVE — the raid-start collect is skipped entirely");
+                logger?.Success("[CompoundingPerf/S15] calm raid start ACTIVE — the raid-start collect is skipped entirely");
                 break;
             default:
-                logger.Info("[CompoundingPerf/S15] calm raid start disabled in config — vanilla's aggressive blocking collect runs");
+                logger?.Info("[CompoundingPerf/S15] calm raid start disabled in config — vanilla's aggressive blocking collect runs");
                 break;
         }
     }

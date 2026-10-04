@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <OutputType>Library</OutputType>
-    <Version>2.1.0</Version>
+    <Version>2.2.0</Version>
     <OutputPath>bin\$(Configuration)\$(ProjectName)\$(AssemblyName)\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 
@@ -69,13 +69,24 @@
 
 
   <!--
-    Rule 2-2: every Release build also drops a ready-to-ship archive in release/.
-    Skip with -p:SkipPackage=true.
+    Rule 2-2: every Release build also drops a ready-to-ship archive in release/, laid out
+    like the SPT folder so it extracts straight into it:
+      SPT_Runtime/user/mods/CompoundingPerf/   server dll + config.json
+      BepInEx/plugins/CompoundingPerf.Client/  F12 settings plugin
+    The client half needs the game's assemblies under SptRoot; without them (e.g. a CI box)
+    the archive carries the server half only and says so. Skip with -p:SkipPackage=true.
   -->
+  <PropertyGroup>
+    <ClientProject>$(MSBuildThisFileDirectory)client\CompoundingPerf.Client.csproj</ClientProject>
+    <CanBuildClient Condition="Exists('$(SptRoot)\BepInEx\core\BepInEx.dll') AND Exists('$(SptRoot)\EscapeFromTarkov_Data\Managed\UnityEngine.IMGUIModule.dll')">true</CanBuildClient>
+  </PropertyGroup>
+
   <Target Name="PackageRelease" AfterTargets="Build"
           Condition="'$(Configuration)' == 'Release' AND '$(SkipPackage)' != 'true'">
     <PropertyGroup>
       <PackageStageDir>$(IntermediateOutputPath)package\</PackageStageDir>
+      <PackageServerDir>$(PackageStageDir)SPT_Runtime\user\mods\CompoundingPerf\</PackageServerDir>
+      <PackageClientDir>$(PackageStageDir)BepInEx\plugins\CompoundingPerf.Client\</PackageClientDir>
       <PackageZipDir>$(MSBuildThisFileDirectory)release\</PackageZipDir>
       <PackageZipPath>$(PackageZipDir)$(AssemblyName)-$(Version).zip</PackageZipPath>
     </PropertyGroup>
@@ -84,7 +95,19 @@
     </ItemGroup>
     <RemoveDir Directories="$(PackageStageDir)" />
     <Copy SourceFiles="@(PackageFiles)"
-          DestinationFiles="@(PackageFiles->'$(PackageStageDir)%(RecursiveDir)%(Filename)%(Extension)')" />
+          DestinationFiles="@(PackageFiles->'$(PackageServerDir)%(RecursiveDir)%(Filename)%(Extension)')" />
+
+    <!-- Restore must run in its own evaluation before Build sees the assets file. -->
+    <MSBuild Projects="$(ClientProject)" Condition="'$(CanBuildClient)' == 'true'"
+             Properties="Configuration=Release;SptRoot=$(SptRoot);_ClientRestore=true" Targets="Restore" />
+    <MSBuild Projects="$(ClientProject)" Condition="'$(CanBuildClient)' == 'true'"
+             Properties="Configuration=Release;SptRoot=$(SptRoot);SkipDeploy=$(SkipDeploy)" Targets="Build">
+      <Output TaskParameter="TargetOutputs" ItemName="ClientDll" />
+    </MSBuild>
+    <Copy SourceFiles="@(ClientDll)" DestinationFolder="$(PackageClientDir)" Condition="'$(CanBuildClient)' == 'true'" />
+    <Warning Condition="'$(CanBuildClient)' != 'true'"
+             Text="Game assemblies not found under $(SptRoot) - the archive has the server mod only, without the F12 plugin." />
+
     <MakeDir Directories="$(PackageZipDir)" />
     <Delete Files="$(PackageZipPath)" />
     <ZipDirectory SourceDirectory="$(PackageStageDir)" DestinationFile="$(PackageZipPath)" Overwrite="true" />

@@ -37,6 +37,7 @@ internal static class RequestTracker
         "/launcher/ping",
         "/fika/update/ping",
         "/client/putMetrics",
+        "/compoundingperf/", // the F12 menu's own reads/writes are not the player doing something
     ];
 
     private sealed class PathStat
@@ -65,7 +66,7 @@ internal static class RequestTracker
 
     public static long SlowRequests => Interlocked.Read(ref _slowRequests);
 
-    public static void Apply(Harmony harmony, bool timing, ISptLogger<CompoundingPerfMod> logger)
+    public static void Apply(Harmony harmony, ISptLogger<CompoundingPerfMod> logger)
     {
         var target = AccessTools.Method(typeof(SptHttpListener), nameof(SptHttpListener.HandleAsync));
         if (target is null)
@@ -75,12 +76,13 @@ internal static class RequestTracker
             return;
         }
 
-        TimingEnabled = timing;
+        // The postfix is always installed and does nothing unless TimingEnabled, so the
+        // debug log can be switched on from F12 without a restart.
         harmony.Patch(
             target,
             prefix: new HarmonyMethod(AccessTools.Method(typeof(RequestTracker), nameof(Prefix))),
-            postfix: timing ? new HarmonyMethod(AccessTools.Method(typeof(RequestTracker), nameof(Postfix))) : null);
-        Status = timing ? "ok (activity + timing)" : "ok (activity only)";
+            postfix: new HarmonyMethod(AccessTools.Method(typeof(RequestTracker), nameof(Postfix))));
+        Status = "ok";
     }
 
     private static void Prefix(HttpContext context, out long __state)

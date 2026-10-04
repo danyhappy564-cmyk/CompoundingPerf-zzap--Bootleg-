@@ -16,9 +16,9 @@ internal static class ConfigLoader
         var pluginDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
         // BepInEx\plugins\<this>\..\..\..  → SPT root
         var sptRoot = Path.GetFullPath(Path.Combine(pluginDir, "..", "..", ".."));
-        var serverModConfig = Path.Combine(sptRoot, "SPT", "user", "mods", "CompoundingPerf", "config.json");
+        var serverModConfig = Path.Combine(sptRoot, "SPT_Runtime", "user", "mods", "CompoundingPerf", "config.json");
         var sidecarConfig   = Path.Combine(pluginDir, "config.json");
-        var logsDir         = Path.Combine(sptRoot, "SPT", "user", "logs");
+        var logsDir         = Path.Combine(sptRoot, "SPT_Runtime", "user", "logs");
 
         var path = File.Exists(serverModConfig) ? serverModConfig
                  : File.Exists(sidecarConfig)   ? sidecarConfig

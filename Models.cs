@@ -220,3 +220,31 @@ public record CompatOptions
     public bool AutoDisableOnConflict { get; set; } = true;
     public bool Verbose { get; set; } = true;
 }
+
+/// <summary>
+/// What the server's settings route (<c>/compoundingperf/config/get</c> and <c>/set</c>)
+/// answers, for the client's F12 menu. Shared by both sides like the rest of this file.
+/// </summary>
+public record ServerSettingsResponse
+{
+    public bool Ok { get; set; } = true;
+    public string? Error { get; set; }
+    public string ServerVersion { get; set; } = "";
+
+    /// <summary>When false no patches were installed at startup, so the switches below do
+    /// nothing until config.json's MasterEnabled is true again and the server restarts.</summary>
+    public bool MasterEnabled { get; set; } = true;
+
+    public ServerToggles? Server { get; set; }
+    public DebugOptions? Debug { get; set; }
+
+    /// <summary>What the last /set changed ("" when nothing did), and whether it reached config.json.</summary>
+    public string? Changes { get; set; }
+    public bool Saved { get; set; }
+
+    public long HeapMb { get; set; }
+    public long CommittedMb { get; set; }
+    public long ProcessMb { get; set; }
+    public string? LastCleanup { get; set; }
+    public string? DebugLogPath { get; set; }
+}

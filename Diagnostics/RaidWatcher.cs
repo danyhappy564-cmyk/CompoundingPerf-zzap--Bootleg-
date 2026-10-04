@@ -49,8 +49,10 @@ internal static class RaidWatcher
             prefix: new HarmonyMethod(AccessTools.Method(typeof(RaidWatcher), nameof(EndPrefix))),
             postfix: new HarmonyMethod(AccessTools.Method(typeof(RaidWatcher), nameof(EndPostfix))));
         Status = "ok";
-        _menuStartStats = DebugLog.Enabled ? ServerStats.Take() : null;
     }
+
+    /// <summary>Called when the debug log opens, so the first "between raids" line has a start.</summary>
+    public static void ResetMenuBaseline() => _menuStartStats = ServerStats.Take();
 
     private static void StartPrefix(StartLocalRaidRequestData request, out long __state)
     {

@@ -86,18 +86,25 @@ internal static class SaveDirtyTracking
         return false;
     }
 
-    public static void Configure(SaveDirtyTrackingOptions options, ISptLogger<CompoundingPerfMod> logger)
+    public static void Configure(SaveDirtyTrackingOptions options, ISptLogger<CompoundingPerfMod>? logger)
     {
         if (options.Enabled)
         {
             ProfileDirtyTracker.ForceSaveIntervalSeconds = Math.Max(10, options.ForceSaveIntervalSeconds);
+            if (!ProfileDirtyTracker.IsEnabled)
+            {
+                // Switched on at runtime (F12): requests made while it was off were never
+                // marked, so nothing seen so far may be trusted as clean.
+                ProfileDirtyTracker.ForgetSaves();
+            }
+
             ProfileDirtyTracker.IsEnabled = true;
-            logger.Success($"[CompoundingPerf/S11] save dirty-tracking ACTIVE — clean sessions skip serialization (force-save every {ProfileDirtyTracker.ForceSaveIntervalSeconds}s)");
+            logger?.Success($"[CompoundingPerf/S11] save dirty-tracking ACTIVE — clean sessions skip serialization (force-save every {ProfileDirtyTracker.ForceSaveIntervalSeconds}s)");
         }
         else
         {
             ProfileDirtyTracker.IsEnabled = false;
-            logger.Info("[CompoundingPerf/S11] save dirty-tracking disabled in config");
+            logger?.Info("[CompoundingPerf/S11] save dirty-tracking disabled in config");
         }
     }
 }

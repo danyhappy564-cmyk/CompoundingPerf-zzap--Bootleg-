@@ -22,7 +22,7 @@ public record ModMetadata : IModMetadata
     public string ModGuid { get; init; } = CompoundingPerfMod.ModGuid;
     public string Name { get; init; } = "CompoundingPerf";
     public string Author { get; init; } = "EchoStarz";
-    public SemanticVersioning.Version Version { get; init; } = new("2.1.0");
+    public SemanticVersioning.Version Version { get; init; } = new("2.2.0");
     public SemanticVersioning.Range SptVersion { get; init; } = new("~4.1.5");
     public string License { get; init; } = "MIT";
     public bool HasPrepatcher { get; init; } = false;
@@ -70,7 +70,21 @@ public class CompoundingPerfMod(
             var config = modHelper.GetJsonDataFromFile<CompoundingPerfConfig>(modPath, "config.json");
 
             TelemetryHub.TimingEnabled = config.Telemetry.TimingEnabled;
-            OpenDebugLog(config.Debug, modPath);
+            config = config with
+            {
+                Server = LiveConfig.Sanitize(config.Server ?? new ServerToggles()),
+                Debug = LiveConfig.Sanitize(config.Debug ?? new DebugOptions()),
+            };
+            LiveConfig.Init(config, Path.Combine(modPath, "config.json"), logger);
+            LiveConfig.RouteStatus = "ok (/compoundingperf/config/get|set)";
+
+            // The server runs with SPT_Runtime as its working directory; fall back to the mod
+            // folder if that ever stops being true.
+            var userLogs = Path.Combine(Directory.GetCurrentDirectory(), "user", "logs");
+            DebugControl.Init(
+                Directory.Exists(userLogs) ? Path.Combine(userLogs, "CompoundingPerf") : Path.Combine(modPath, "logs"),
+                message => logger.Info(message));
+            AppDomain.CurrentDomain.ProcessExit += (_, _) => DebugControl.OnShutdown();
 
 #if BENCH
             // Dev benchmark builds only: server-side GC/counter sampler. Runs on BOTH
@@ -86,7 +100,8 @@ public class CompoundingPerfMod(
             if (!config.MasterEnabled)
             {
                 logger.Warning("[CompoundingPerf] MASTER SWITCH OFF — no patches installed (benchmark baseline mode). Flip MasterEnabled to true to re-enable.");
-                DebugLog.Write("startup", "MasterEnabled=false — no patches installed, nothing else will be logged");
+                DebugControl.Apply(config.Debug, config);
+                DebugLog.Write("startup", "MasterEnabled=false — no patches installed, F12 switches have no effect until it is true again");
                 return Task.CompletedTask;
             }
 
@@ -98,23 +113,12 @@ public class CompoundingPerfMod(
             IsolatedBotRandomisation.Apply(harmony, cloner, logger);                       // S12
             CalmNotifier.Apply(harmony, notifierHelper, notificationService, logger);      // S13
             CalmRaidStart.Apply(harmony, logger);                                          // S15
-            RequestTracker.Apply(harmony, DebugLog.Enabled, logger);                       // S16 quiet detection + debug timing
+            RequestTracker.Apply(harmony, logger);                                         // S16 quiet detection + debug timing
             RaidWatcher.Apply(harmony, logger);                                            // S16 trigger + debug raid summaries
-            if (DebugLog.Enabled)
-            {
-                BotGenerationTracker.Apply(harmony);
-            }
+            BotGenerationTracker.Apply(harmony);                                           // debug only (gated at runtime)
 
-            CalmRagfair.Configure(config.Server.RagfairCalmUpdates, logger);
-            FastCompression.Configure(config.Server.FastCompression, logger);
-            SaveDirtyTracking.Configure(config.Server.SaveDirtyTracking, logger);
-            IsolatedBotRandomisation.Configure(config.Server.IsolatedBotRandomisation, logger);
-            CalmNotifier.Configure(config.Server.CalmNotifier, logger);
-            CalmRaidStart.Configure(config.Server.RaidStartGc, logger);
-            PostRaidCleanup.Configure(config.Server.PostRaidCleanup, logger);
-
-            WriteSelfCheck(config);
-            StartPeriodicSummary(config.Debug);
+            // Every switch is read at call time, so the F12 menu can flip any of them later.
+            LiveConfig.ApplyAtStartup(config);
 
             logger.Success("[CompoundingPerf] server-side features loaded");
         }
@@ -125,84 +129,5 @@ public class CompoundingPerfMod(
         }
 
         return Task.CompletedTask;
-    }
-
-    private void OpenDebugLog(DebugOptions options, string modPath)
-    {
-        if (!options.Enabled)
-        {
-            return;
-        }
-
-        // The server runs with SPT_Runtime as its working directory; fall back to the mod
-        // folder if that ever stops being true.
-        var userLogs = Path.Combine(Directory.GetCurrentDirectory(), "user", "logs");
-        var directory = Directory.Exists(userLogs) ? Path.Combine(userLogs, "CompoundingPerf") : Path.Combine(modPath, "logs");
-        if (!DebugLog.Open(directory, options.KeepFiles))
-        {
-            logger.Warning($"[CompoundingPerf] debug log is on but {directory} could not be written — debug log disabled");
-            return;
-        }
-
-        RequestTracker.SlowRequestMs = Math.Max(1, options.SlowRequestMs);
-        logger.Info($"[CompoundingPerf] debug log ON → {DebugLog.FilePath}");
-        DebugLog.Write("startup", $"CompoundingPerf {new ModMetadata().Version} debug log | {DateTime.Now:yyyy-MM-dd HH:mm:ss zzz}");
-        DebugLog.Write("startup", $"GC: {ServerStats.GcConfiguration()}");
-        DebugLog.Write("startup", $"memory: {ServerStats.Take().Memory()}");
-
-        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
-        {
-            DebugLog.Write("shutdown", $"server stopping | {ServerStats.Take().Memory()}");
-            RequestTracker.DumpPeriod("since the last raid boundary");
-            DebugLog.Close();
-        };
-    }
-
-    private static void WriteSelfCheck(CompoundingPerfConfig config)
-    {
-        if (!DebugLog.Enabled)
-        {
-            return;
-        }
-
-        var s = config.Server;
-        DebugLog.Write("selfcheck", "patch = did the code hook land in SPT 4.1.5 | config = is the feature switched on");
-        DebugLog.Write("selfcheck", $"S8  calm ragfair GC     patch {CalmRagfair.Status} | config {On(s.RagfairCalmUpdates.Enabled)}");
-        DebugLog.Write("selfcheck", $"S9  fast compression    patch {FastCompression.Status} | config {On(s.FastCompression.Enabled)} level {FastCompression.Level}");
-        DebugLog.Write("selfcheck", $"S11 save dirty-tracking patch {SaveDirtyTracking.Status} | config {On(s.SaveDirtyTracking.Enabled)}");
-        DebugLog.Write("selfcheck", $"S12 isolated bot random patch {IsolatedBotRandomisation.Status} | config {On(s.IsolatedBotRandomisation.Enabled)}");
-        DebugLog.Write("selfcheck", $"S13 calm notifier       patch {CalmNotifier.Status} | config {On(s.CalmNotifier.Enabled)}");
-        DebugLog.Write("selfcheck", $"S15 raid-start GC       patch {CalmRaidStart.Status} | config {On(s.RaidStartGc.Enabled)} mode {CalmRaidStart.Mode}");
-        DebugLog.Write("selfcheck", $"S16 post-raid cleanup   raid hooks {RaidWatcher.Status}, request hook {RequestTracker.Status} | config {On(s.PostRaidCleanup.Enabled)}" +
-                                    $" (delay {s.PostRaidCleanup.DelaySeconds}s, quiet {s.PostRaidCleanup.QuietSeconds}s, max wait {s.PostRaidCleanup.MaxWaitSeconds}s, min {s.PostRaidCleanup.MinCommittedMb} MB)");
-        DebugLog.Write("selfcheck", $"debug   bot generation timing {BotGenerationTracker.Status}, slow request ≥ {RequestTracker.SlowRequestMs} ms, summary every {config.Debug.SummaryIntervalMinutes} min");
-    }
-
-    private static string On(bool value) => value ? "ON" : "off";
-
-    private static Timer? _summaryTimer;
-
-    private static void StartPeriodicSummary(DebugOptions options)
-    {
-        if (!DebugLog.Enabled || options.SummaryIntervalMinutes <= 0)
-        {
-            return;
-        }
-
-        var previous = ServerStats.Take();
-        var interval = TimeSpan.FromMinutes(options.SummaryIntervalMinutes);
-        _summaryTimer = new Timer(_ =>
-        {
-            try
-            {
-                var now = ServerStats.Take();
-                DebugLog.Write("summary", $"{now.Memory()} | {now.Since(previous)}");
-                previous = now;
-            }
-            catch (Exception ex)
-            {
-                DebugLog.Write("summary", $"failed: {ex.Message}");
-            }
-        }, null, interval, interval);
     }
 }

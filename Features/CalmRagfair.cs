@@ -78,16 +78,16 @@ internal static class CalmRagfair
         DebugLog.Write("S8", $"flea offers expired — vanilla forced collect ran (feature off): {RequestTracker.ToMs(System.Diagnostics.Stopwatch.GetTimestamp() - start):0} ms");
     }
 
-    public static void Configure(RagfairCalmUpdatesOptions options, ISptLogger<CompoundingPerfMod> logger)
+    public static void Configure(RagfairCalmUpdatesOptions options, ISptLogger<CompoundingPerfMod>? logger)
     {
         IsEnabled = options.Enabled;
         if (options.Enabled)
         {
-            logger.Success("[CompoundingPerf/S8] calm ragfair updates ACTIVE — offer expiry runs without vanilla's forced blocking GC");
+            logger?.Success("[CompoundingPerf/S8] calm ragfair updates ACTIVE — offer expiry runs without vanilla's forced blocking GC");
         }
         else
         {
-            logger.Info("[CompoundingPerf/S8] calm ragfair updates disabled in config");
+            logger?.Info("[CompoundingPerf/S8] calm ragfair updates disabled in config");
         }
     }
 }

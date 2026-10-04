@@ -136,17 +136,17 @@ internal static class FastCompression
         _ => CompressionLevel.Fastest,
     };
 
-    public static void Configure(FastCompressionOptions options, ISptLogger<CompoundingPerfMod> logger)
+    public static void Configure(FastCompressionOptions options, ISptLogger<CompoundingPerfMod>? logger)
     {
         Level = ParseLevel(options.Level);
         IsEnabled = options.Enabled;
         if (options.Enabled)
         {
-            logger.Success($"[CompoundingPerf/S9] fast response compression ACTIVE — zlib level {Level} (vanilla: SmallestSize)");
+            logger?.Success($"[CompoundingPerf/S9] fast response compression ACTIVE — zlib level {Level} (vanilla: SmallestSize)");
         }
         else
         {
-            logger.Info("[CompoundingPerf/S9] fast response compression disabled in config");
+            logger?.Info("[CompoundingPerf/S9] fast response compression disabled in config");
         }
     }
 }

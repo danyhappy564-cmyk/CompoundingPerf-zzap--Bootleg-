@@ -77,16 +77,16 @@ internal static class IsolatedBotRandomisation
         __result = _cloner.Clone(__result);
     }
 
-    public static void Configure(IsolatedBotRandomisationOptions options, ISptLogger<CompoundingPerfMod> logger)
+    public static void Configure(IsolatedBotRandomisationOptions options, ISptLogger<CompoundingPerfMod>? logger)
     {
         IsEnabled = options.Enabled;
         if (options.Enabled)
         {
-            logger.Success("[CompoundingPerf/S12] isolated bot randomisation ACTIVE — nighttime modifiers no longer compound, persist, or race on shared config");
+            logger?.Success("[CompoundingPerf/S12] isolated bot randomisation ACTIVE — nighttime modifiers no longer compound, persist, or race on shared config");
         }
         else
         {
-            logger.Info("[CompoundingPerf/S12] isolated bot randomisation disabled in config");
+            logger?.Info("[CompoundingPerf/S12] isolated bot randomisation disabled in config");
         }
     }
 }

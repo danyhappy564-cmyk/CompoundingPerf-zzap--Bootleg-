@@ -31,11 +31,18 @@ internal static class PostRaidCleanup
     private static int _maxWaitSeconds = 120;
     private static long _minCommittedBytes = 512L * 1024 * 1024;
     private static int _pending;
+
+    /// <summary>Korean one-liner about the last cleanup, shown in the client's F12 status.</summary>
+    public static volatile string? LastResult;
     private static ISptLogger<CompoundingPerfMod>? _logger;
 
-    public static void Configure(PostRaidCleanupOptions options, ISptLogger<CompoundingPerfMod> logger)
+    public static void Configure(PostRaidCleanupOptions options, ISptLogger<CompoundingPerfMod>? logger)
     {
-        _logger = logger;
+        if (logger is not null)
+        {
+            _logger = logger;
+        }
+
         _delaySeconds = Math.Clamp(options.DelaySeconds, 0, 600);
         _quietSeconds = Math.Clamp(options.QuietSeconds, 0, 60);
         _maxWaitSeconds = Math.Clamp(options.MaxWaitSeconds, 0, 1800);
@@ -44,11 +51,11 @@ internal static class PostRaidCleanup
 
         if (options.Enabled)
         {
-            logger.Success($"[CompoundingPerf/S16] post-raid cleanup ACTIVE — after each raid, once the server is quiet, memory is compacted and returned to Windows (when over {options.MinCommittedMb} MB)");
+            logger?.Success($"[CompoundingPerf/S16] post-raid cleanup ACTIVE — after each raid, once the server is quiet, memory is compacted and returned to Windows (when over {options.MinCommittedMb} MB)");
         }
         else
         {
-            logger.Info("[CompoundingPerf/S16] post-raid cleanup disabled in config");
+            logger?.Info("[CompoundingPerf/S16] post-raid cleanup disabled in config");
         }
     }
 
@@ -97,6 +104,7 @@ internal static class PostRaidCleanup
             if (RaidWatcher.RaidSequence != raidSequence)
             {
                 DebugLog.Write("S16", "skipped — a new raid started before the server went quiet");
+                LastResult = $"{DateTime.Now:HH:mm} 건너뜀 (정리 전에 새 레이드 시작)";
                 return;
             }
 
@@ -118,6 +126,7 @@ internal static class PostRaidCleanup
         var before = ServerStats.Take();
         if (before.CommittedBytes < _minCommittedBytes)
         {
+            LastResult = $"{DateTime.Now:HH:mm} 건너뜀 (서버 메모리 {ServerStats.Mb(before.CommittedBytes)} MB < 기준 {ServerStats.Mb(_minCommittedBytes)} MB)";
             DebugLog.Write("S16", $"skipped — GC committed only {ServerStats.Mb(before.CommittedBytes)} MB (threshold {ServerStats.Mb(_minCommittedBytes)} MB). {before.Memory()}");
             return;
         }
@@ -136,6 +145,7 @@ internal static class PostRaidCleanup
             $"pause {stopwatch.ElapsedMilliseconds} ms";
 
         _logger?.Info($"[CompoundingPerf/S16] post-raid cleanup: {summary}");
+        LastResult = $"{DateTime.Now:HH:mm} 정리함: 서버 메모리 {ServerStats.Mb(before.WorkingSetBytes)} → {ServerStats.Mb(after.WorkingSetBytes)} MB, 멈춤 {stopwatch.ElapsedMilliseconds} ms";
         DebugLog.Write("S16", $"done{(forced ? " (server never went quiet — ran after the max wait)" : string.Empty)}, waited {waited:0.0}s for quiet: {summary}");
     }
 }
