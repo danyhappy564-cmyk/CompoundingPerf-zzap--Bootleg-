@@ -86,10 +86,22 @@ internal static class DebugControl
         DebugLog.Write("selfcheck", $"S16 post-raid cleanup   raid hooks {RaidWatcher.Status}, request hook {RequestTracker.Status} | config {On(s.PostRaidCleanup.Enabled)}" +
                                     $" (delay {s.PostRaidCleanup.DelaySeconds}s, quiet {s.PostRaidCleanup.QuietSeconds}s, max wait {s.PostRaidCleanup.MaxWaitSeconds}s, min {s.PostRaidCleanup.MinCommittedMb} MB)");
         DebugLog.Write("selfcheck", $"F12     settings route {LiveConfig.RouteStatus}");
+        DebugLog.Write("selfcheck", BotModsLine());
         DebugLog.Write("selfcheck", $"debug   bot generation timing {BotGenerationTracker.Status}, slow request ≥ {RequestTracker.SlowRequestMs} ms, summary every {config.Debug.SummaryIntervalMinutes} min");
     }
 
     private static string On(bool value) => value ? "ON" : "off";
+
+    /// <summary>APBS generates PMC gear and ABPS places spawns; both change what the bot
+    /// numbers in this log mean, so say whether they are loaded.</summary>
+    private static string BotModsLine()
+    {
+        var names = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetName().Name ?? "").ToList();
+        var apbs = names.Any(n => n.StartsWith("acidphantasm-progressivebotsystem", StringComparison.OrdinalIgnoreCase));
+        var abps = names.Any(n => n.StartsWith("acidphantasm-botplacementsystem", StringComparison.OrdinalIgnoreCase));
+        return "bot mods APBS " + (apbs ? "loaded (its gear generation is inside the [bots] times; S12 leaves its read-only calls alone)" : "not loaded") +
+               " | ABPS " + (abps ? "loaded (its raid start/end hooks are on the same requests: in the [requests] table, not in 'raid-start response built')" : "not loaded");
+    }
 
     private static void RestartSummary(int minutes)
     {

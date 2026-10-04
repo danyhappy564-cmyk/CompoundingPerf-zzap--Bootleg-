@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.2.1 — 2026-10-04
+
+**Changed**
+- **S12 clones only where the write happens.** The only writer of the shared
+  `RandomisationDetails` is vanilla `BotInventoryGenerator.GenerateAndAddEquipmentToBot`
+  (night-raid modifiers). `BotEquipmentModGenerator.GenerateModsForWeapon` (recursive, once per
+  attachment slot) and APBS's `CustomBotInventoryGenerator` / `CustomBotEquipmentModGenerator`
+  call `GetBotRandomizationDetails` read-only, and each of those calls used to get a clone —
+  dozens per bot. A thread-static scope (prefix + finalizer) around the vanilla equipment step
+  now limits cloning to that caller: one clone per vanilla bot, none for APBS-managed bots,
+  same isolation. Falls back to clone-everything if the equipment step is not found.
+- Debug log self-check reports whether APBS / ABPS are loaded; the raid-start line notes that
+  other mods' hooks on `/client/match/local/start` are counted in the `[requests]` table.
+
+**Checked against APBS (a5fd727) and ABPS (420f6ef)**: no shared patch targets besides S12's;
+neither calls `GC.Collect`; ABPS's raid-end work runs inside the end request, before S16 starts.
+
 ## 2.2.0 — 2026-10-04
 
 **Added**

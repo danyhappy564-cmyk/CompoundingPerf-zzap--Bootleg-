@@ -95,7 +95,7 @@ internal static class RaidWatcher
         __result.ContinueWith(task =>
         {
             var ms = RequestTracker.ToMs(Stopwatch.GetTimestamp() - __state);
-            DebugLog.Write("raid", $"raid-start response built in {ms:0} ms (loot generation + S15 collect mode {CalmRaidStart.Mode})" +
+            DebugLog.Write("raid", $"raid-start response built in {ms:0} ms (SPT's own part: loot generation + S15 collect mode {CalmRaidStart.Mode}; other mods' hooks on /client/match/local/start are in the [requests] table)" +
                                    (task.IsFaulted ? $" — FAILED: {task.Exception?.GetBaseException().Message}" : string.Empty));
         }, TaskContinuationOptions.ExecuteSynchronously);
     }
