@@ -1,10 +1,10 @@
 ### ⚠️ IMPORTANT NOTICE / DISCLAIMER
 
-**Original Author:** EchoStarz
-**Original Repository:** CompoundingPerf
-**Original Link:** https://forge.sp-tarkov.com/mod/2415/compoundingperf
-**License:** MIT
-**This Port By:** R_F (danyhappy564-cmyk) — unofficial, AI-assisted port. Not affiliated with or endorsed by the original author.
+- **Original Author:** EchoStarz
+- **Original Repository:** CompoundingPerf
+- **Original Link:** https://forge.sp-tarkov.com/mod/2415/compoundingperf
+- **License:** MIT
+- **This Port By:** R_F (danyhappy564-cmyk) — unofficial, AI-assisted port. Not affiliated with or endorsed by the original author.
 
 1. **Reflection & Take-Downs:** I deeply reflect on the ECOT incident. As an AI-assisted "vibe coder," I will immediately delete files if the original authors ask.
 2. **No Re-Distribution:** These ported builds are unverified, temporary fixes. Please do NOT re-upload or share them anywhere else.
@@ -28,6 +28,7 @@
 
 ## 변경 이력 (KST)
 
+- 2026-10-13 04:38 — README 맨 위 원작자 표기를 한 줄씩 나눠 보기 쉽게 정리 (내용 변화 없음)
 ### v2.2.2 추가 — 2026-10-05 (F12 서버 연결 고침)
 - 실게임 로그에서 F12 플러그인이 서버 주소를 못 찾는 것 확인(`[F12] reading settings failed: no -config BackendUrl launch argument`) →
   `ServerLink`가 SPT가 이미 읽어 둔 주소(`spt-common`의 `RequestHandler.Host`, 리플렉션)를 먼저 쓰고, 실행 인자는 따옴표가 빠진 형태까지 읽도록 수정. Mono로 두 인자 형태 확인.
