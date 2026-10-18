@@ -22,7 +22,7 @@ public record ModMetadata : IModMetadata, SPTarkov.Server.Web.IModBlazorMetadata
     public string ModGuid { get; init; } = CompoundingPerfMod.ModGuid;
     public string Name { get; init; } = "CompoundingPerf";
     public string Author { get; init; } = "EchoStarz";
-    public SemanticVersioning.Version Version { get; init; } = new("2.2.2");
+    public SemanticVersioning.Version Version { get; init; } = new("2.3.0");
     public SemanticVersioning.Range SptVersion { get; init; } = new("~4.1.5");
     public string License { get; init; } = "MIT";
     public bool HasPrepatcher { get; init; } = false;
