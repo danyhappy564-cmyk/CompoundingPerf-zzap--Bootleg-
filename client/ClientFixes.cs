@@ -11,9 +11,9 @@ namespace CompoundingPerf.Client;
 
 /// <summary>
 /// "09. Game client CPU waste" (C1, C2): two spots where the game keeps the CPU busy for nothing during a raid. Unlike
-/// everything else on this F12 page they run in the game, not on the server, and are not sent anywhere. Patched once at
-/// start; each patch checks its setting. A target that is missing (another game build) is skipped and logged.
-/// Ideas from Smoothie (TominoCZ), written anew and checked against the 4.1 client.
+/// everything else on this F12 page they run in the game, not on the server, and are not sent anywhere. C1 needs no
+/// patch (a check every 2 s); C2 is patched once at start and checks its setting. A missing target (another game
+/// build) is skipped and logged. Inspired by Smoothie (TominoCZ); written for this mod from the 4.1 client's own code.
 /// </summary>
 internal static class ClientFixes
 {
@@ -26,11 +26,8 @@ internal static class ClientFixes
     {
         _log = log;
         var harmony = new Harmony(Plugin.ModGuid + ".clientfixes");
-        Patch(harmony, "C1 menu video (shown/hidden)", AccessTools.Method(typeof(EnvironmentUI), nameof(EnvironmentUI.ShowEnvironment)), nameof(ShowEnvironmentPostfix));
-        Patch(harmony, "C1 menu video (loaded)", AccessTools.Method(typeof(VideoEnvironmentUIRoot), nameof(VideoEnvironmentUIRoot.Init)), nameof(VideoInitPostfix));
         Patch(harmony, "C2 airdrop physics (landed)", AccessTools.Method(typeof(ServerAirDrop), nameof(ServerAirDrop.ManualUpdate)), nameof(AirdropUpdatePostfix));
         Patch(harmony, "C2 airdrop physics (reused)", AccessTools.Method(typeof(ServerAirDrop), nameof(ServerAirDrop.Init)), nameof(AirdropInitPostfix));
-        MenuVideo.SettingChanged += (_, _) => ResyncMenuVideos();
     }
 
     private static void Patch(Harmony harmony, string name, System.Reflection.MethodInfo? target, string postfix)
@@ -55,101 +52,84 @@ internal static class ClientFixes
 
     // ---------------------------------------------------------------- C1 menu background video
 
-    // One main-menu background (VideoEnvironmentUIRoot) is four 2048x1024 60 fps video loops. Its Init moves the video
-    // players out of the background object, and for a raid the menu hides only the background object
-    // (EnvironmentUI.ShowEnvironment(false)), so the videos kept decoding for the whole raid. Paused while the background
-    // is hidden, played again when it is shown. Only players this code paused are resumed.
+    // Checked in Assembly-CSharp 4.1: VideoEnvironmentUIRoot.Init re-parents its public _videoHolderGameObject (the
+    // VideoPlayers) next to the environment root, and EnvironmentUI.ShowEnvironment(false) only deactivates the root,
+    // so the menu videos keep decoding through the raid. No patch here: every 2 s the plugin's Update looks at the
+    // menu's public IsActive and pauses the holder's players while the menu background is hidden, then plays exactly
+    // those again once it is shown (or the setting is turned off). A player that starts late is caught on the next look.
     private static readonly AccessTools.FieldRef<EnvironmentUI, EnvironmentUIRoot> CurrentEnvironment =
         AccessTools.FieldRefAccess<EnvironmentUI, EnvironmentUIRoot>("_currentEnvironment");
 
-    private static readonly AccessTools.FieldRef<EnvironmentUI, bool> EnvironmentShown =
-        AccessTools.FieldRefAccess<EnvironmentUI, bool>("_lastVisibleStateEnvironment");
-
-    private static readonly AccessTools.FieldRef<VideoEnvironmentUIRoot, VideoPlayer[]> VideoPlayers =
-        AccessTools.FieldRefAccess<VideoEnvironmentUIRoot, VideoPlayer[]>("_videoPlayers");
-
-    private static readonly List<VideoPlayer> PausedVideos = new();
-    private static float _nextResync;
-
-    private static void ShowEnvironmentPostfix(EnvironmentUI __instance, bool value)
-    {
-        try
-        {
-            SyncMenuVideos(CurrentEnvironment(__instance), value);
-        }
-        catch (Exception ex)
-        {
-            Fail("C1 menu video", ex);
-        }
-    }
-
-    // A background loads asynchronously and can finish (Init collects its players) while it is already hidden.
-    private static void VideoInitPostfix(VideoEnvironmentUIRoot __instance)
-    {
-        try
-        {
-            if (!__instance.gameObject.activeSelf) SyncMenuVideos(__instance, false);
-        }
-        catch (Exception ex)
-        {
-            Fail("C1 menu video", ex);
-        }
-    }
-
-    private static void SyncMenuVideos(EnvironmentUIRoot? environment, bool shown)
-    {
-        if (shown || !MenuVideo.Value)
-        {
-            foreach (var player in PausedVideos)
-            {
-                if (player != null && player.isPaused) player.Play();
-            }
-
-            PausedVideos.Clear();
-            return;
-        }
-
-        if (environment is not VideoEnvironmentUIRoot root || VideoPlayers(root) is not { } players) return;
-        foreach (var player in players)
-        {
-            // Playing, or about to start by itself (still preparing with play-on-awake). A stopped one is left alone,
-            // so resuming never starts a video that was not playing.
-            if (player == null || !(player.isPlaying || player.playOnAwake && player.isActiveAndEnabled && !player.isPaused && !player.isPrepared)) continue;
-            player.Pause();
-            if (!PausedVideos.Contains(player)) PausedVideos.Add(player);
-        }
-    }
-
-    /// <summary>After a settings change, and every 5 s from the plugin's Update for a video that started late: the
-    /// background is not shown or hidden again until the raid ends, so apply its current state.</summary>
-    internal static void ResyncMenuVideos()
-    {
-        try
-        {
-            if (!MonoBehaviourSingleton<EnvironmentUI>.Instantiated) return;
-            var ui = MonoBehaviourSingleton<EnvironmentUI>.Instance;
-            SyncMenuVideos(CurrentEnvironment(ui), EnvironmentShown(ui));
-        }
-        catch (Exception ex)
-        {
-            Fail("C1 menu video", ex);
-        }
-    }
+    private const float VideoCheckSeconds = 2f;
+    private static float _nextVideoCheck;
+    private static VideoEnvironmentUIRoot? _videoRoot;
+    private static VideoPlayer[] _videoPlayers = Array.Empty<VideoPlayer>();
+    private static readonly HashSet<VideoPlayer> PausedByUs = new();
 
     internal static void Tick()
     {
-        if (Time.unscaledTime < _nextResync) return;
-        _nextResync = Time.unscaledTime + 5f;
-        if (MenuVideo.Value || PausedVideos.Count > 0) ResyncMenuVideos();
+        if (Time.unscaledTime < _nextVideoCheck) return;
+        _nextVideoCheck = Time.unscaledTime + VideoCheckSeconds;
+        try
+        {
+            CheckMenuVideos();
+        }
+        catch (Exception ex)
+        {
+            Fail("C1 menu video", ex);
+        }
+    }
+
+    private static void CheckMenuVideos()
+    {
+        if (!MonoBehaviourSingleton<EnvironmentUI>.Instantiated)
+        {
+            PlayPausedAgain();
+            return;
+        }
+
+        var ui = MonoBehaviourSingleton<EnvironmentUI>.Instance;
+        var root = CurrentEnvironment(ui) as VideoEnvironmentUIRoot;
+        if (!ReferenceEquals(root, _videoRoot))
+        {
+            // The menu switched backgrounds: the old players are gone with the old root.
+            PlayPausedAgain();
+            _videoRoot = root;
+            var holder = root != null ? root._videoHolderGameObject : null;
+            _videoPlayers = holder != null ? holder.GetComponentsInChildren<VideoPlayer>(true) : Array.Empty<VideoPlayer>();
+        }
+
+        if (!MenuVideo.Value || root == null || ui.IsActive)
+        {
+            PlayPausedAgain();
+            return;
+        }
+
+        foreach (var player in _videoPlayers)
+        {
+            if (player != null && player.isPlaying && PausedByUs.Add(player)) player.Pause();
+        }
+    }
+
+    private static void PlayPausedAgain()
+    {
+        if (PausedByUs.Count == 0) return;
+        foreach (var player in PausedByUs)
+        {
+            if (player != null && player.isPaused) player.Play();
+        }
+
+        PausedByUs.Clear();
     }
 
     // ---------------------------------------------------------------- C2 landed airdrop physics
 
-    // A falling crate registers its rigidbody with EFT's physics controller (ServerAirDrop.Init) and never unregisters it.
-    // While any registered body is active the controller steps the physics of the whole map every frame, so one airdrop
-    // kept that running for the rest of the raid. Once the crate has landed (stage Landed comes after it has finished
-    // tipping over) nothing moves it again, so its body is unregistered then; its colliders stay, players still stand on
-    // it and it is still lootable. Runs only where the airdrop is simulated (solo, or the Fika host).
+    // Checked in Assembly-CSharp 4.1: ServerAirDrop.Init calls PhysicsExtensions.UpdateController.SupportRigidbody, and
+    // nothing ever calls UnsupportRigidbody for it. UpdateController.CheckRigidbodiesDone keeps Simulation.UpdateEnabled
+    // on while any listed body is active in the hierarchy, so after one airdrop Physics.Simulate ran every frame until the
+    // raid ended. The crate only reaches EAirdropFallingStage.Landed after RotateAfterDrop has finished, and from then on
+    // ManualUpdate moves nothing, so the body is taken off the list at that point. The colliders stay in the scene.
+    // ServerAirDrop exists only where the drop is simulated (solo, or the Fika host).
     private static readonly ConditionalWeakTable<ServerAirDrop, object> Released = new();
     private static readonly object Marker = new();
 

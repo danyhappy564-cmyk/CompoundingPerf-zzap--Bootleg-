@@ -139,9 +139,9 @@ internal sealed class ServerSettingsMenu
         ClientFixes.MenuVideo = Bind(config, "C1 MenuVideo", "Enabled", c9, true, 20,
             "C1 레이드 중 메뉴 배경 영상 멈추기", "C1 Pause the menu background video in raid",
             "메인 메뉴 배경 중 하나는 영상 4개(2048x1024, 60fps)를 계속 돌립니다. 레이드에 들어가면 게임이 배경만 숨기고 영상은 그대로 둬서, 레이드 내내 보이지도 않는 영상을 디코딩합니다(CPU 코어를 잡아먹음). " +
-            "켜면 배경이 숨겨져 있는 동안 영상을 일시정지하고, 메뉴로 돌아오면 다시 재생합니다. 보이는 차이는 없습니다.",
+            "켜면 2초마다 확인해서 배경이 숨겨져 있는 동안 영상을 일시정지하고, 메뉴로 돌아오면 다시 재생합니다. 게임 함수를 고치지 않는 방식이고 보이는 차이는 없습니다.",
             "One of the main menu backgrounds keeps four 2048x1024 60 fps videos running. Going into a raid the game hides only the background and leaves the videos on, so they decode for the whole raid without being seen (eating CPU cores). " +
-            "With this on they are paused while the background is hidden and play again back in the menu. Nothing you can see changes.",
+            "With this on, a check every 2 s pauses them while the background is hidden and plays them again back in the menu. No game code is patched for this and nothing you can see changes.",
             sendsToServer: false);
         ClientFixes.AirdropPhysics = Bind(config, "C2 AirdropPhysics", "Enabled", c9, true, 10,
             "C2 착지한 에어드랍 상자 물리 끄기", "C2 Release a landed airdrop's physics",
