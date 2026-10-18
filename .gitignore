@@ -5,3 +5,7 @@ dist/
 .vs/
 .idea/
 release/
+
+# Build deploy output from a non-Windows box: SptRoot defaults to "E:\SPT 4.1", which lands here
+# as a literal "E:" folder; a colon in a path breaks checkout on Windows.
+E:/
