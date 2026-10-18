@@ -66,6 +66,7 @@ public class Plugin : BaseUnityPlugin
             // F12 page for the server mod's settings, applied live through the server's
             // settings route. The only release-build feature of this plugin.
             _menu = new ServerSettingsMenu(Config, Logger);
+            ClientFixes.Apply(Logger);
 
             Log.LogInfo($"{ModName} ready");
         }
@@ -78,6 +79,7 @@ public class Plugin : BaseUnityPlugin
     private void Update()
     {
         _menu?.Update();
+        ClientFixes.Tick();
     }
 
     private void OnApplicationQuit()

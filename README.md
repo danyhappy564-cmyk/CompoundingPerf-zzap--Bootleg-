@@ -1,9 +1,14 @@
 ### ⚠️ IMPORTANT NOTICE / DISCLAIMER
 
-- **Original Author:** EchoStarz
-- **Original Repository:** CompoundingPerf
-- **Original Link:** https://forge.sp-tarkov.com/mod/2415/compoundingperf
-- **License:** MIT
+**Original Works:**
+
+1. **EchoStarz** — CompoundingPerf
+   - Link: https://forge.sp-tarkov.com/mod/2415/compoundingperf
+   - License: MIT
+2. **TominoCZ** — Smoothie (ideas for the two game-side fixes C1·C2, written anew for this mod)
+   - Repository: [TominoCZ/Smoothie](https://github.com/TominoCZ/Smoothie)
+   - License: CC BY-NC-SA 4.0
+
 - **This Port By:** R_F (danyhappy564-cmyk) — unofficial, AI-assisted port. Not affiliated with or endorsed by the original author.
 
 1. **Reflection & Take-Downs:** I deeply reflect on the ECOT incident. As an AI-assisted "vibe coder," I will immediately delete files if the original authors ask.
@@ -22,12 +27,13 @@
 > 사라져서, 단순 리네임이 아니라 **기능별로 재검증하고 전달 방식을 갈아엎은** 작업입니다.
 > 기능 11개 중 6개가 빠지고 1개가 새로 들어갔습니다. 2.1에서 1개(S16)와 디버그 로그가 더 들어갔습니다.
 
-현재 기준 **SPT 4.1.5**. 최적화는 전부 **서버 쪽**에서 일어납니다. 게임 쪽에는 **F12 설정 화면용 플러그인 하나**만
-올라가고(2.2부터), 이 플러그인은 설정을 서버에 전달하는 일만 합니다 — 게임 성능에는 영향이 없습니다.
-게임 쪽 메모리·끊김은 RAM 클리너(zzap) 몫이고, 이 모드는 **SPT 서버 프로세스** 쪽만 다룹니다.
+현재 기준 **SPT 4.1.5**. 최적화는 대부분 **서버 쪽**에서 일어납니다. 게임 쪽에는 **F12 설정 화면용 플러그인 하나**가
+올라가고(2.2부터), 이 플러그인은 설정을 서버에 전달합니다. 여기에 게임 쪽 CPU 낭비 두 가지(C1 메뉴 배경 영상, C2 착지한 에어드랍 물리)를 고치는 작은 수정이 들어 있습니다(09번, 끌 수 있음).
+게임 쪽 메모리·끊김은 RAM 클리너(zzap) 몫이고, 이 모드는 **SPT 서버 프로세스** 쪽이 중심입니다.
 
 ## 변경 이력 (KST)
 
+- 2026-10-18 10:20 — **게임 쪽 CPU 낭비 수정 2개(F12 '09.', 기본 켜짐, 서버로 안 보냄).** C1: 메인 메뉴 배경 중 하나는 영상 4개(2048x1024·60fps)를 돌리는데, 레이드에 들어가면 게임이 배경만 숨기고 영상은 그대로 둬서 레이드 내내 안 보이는 영상을 디코딩하던 것 → 숨겨져 있는 동안 일시정지, 메뉴로 오면 다시 재생. C2: 에어드랍 상자가 물리 관리 목록에서 영영 안 빠져서, 에어드랍 하나가 레이드 끝까지 맵 전체 물리 계산을 매 프레임 돌게 하던 것 → 상자가 완전히 내려앉은 뒤 목록에서만 뺌(올라서기·루팅 그대로, 솔로·Fika 호스트에서만 해당). 아이디어 출처 Smoothie(TominoCZ), 4.1 게임 코드로 확인 후 새로 작성. 클라 빌드 오류 0·경고 0, **인게임 확인 전**. RAM 클리너 웹 '서버 최적화' 탭에서도 이 두 항목이 보입니다.
 - 2026-10-13 04:38 — README 맨 위 원작자 표기를 한 줄씩 나눠 보기 쉽게 정리 (내용 변화 없음)
 ### v2.2.2 추가 — 2026-10-05 (F12 서버 연결 고침)
 - 실게임 로그에서 F12 플러그인이 서버 주소를 못 찾는 것 확인(`[F12] reading settings failed: no -config BackendUrl launch argument`) →
@@ -153,6 +159,7 @@ S16은 그 강한 GC를 **아무도 기다리지 않는 순간**으로 옮깁니
 | 06. 알림 대기 (S13) | 사용 |
 | 07. 저장 건너뛰기 (S11 · 위험) | 사용 / 그래도 저장하는 간격 |
 | 08. 디버그 로그 | 사용 / 요약 간격 / 느린 요청 기준 / 보관할 파일 수 |
+| 09. 게임 쪽 CPU 낭비 고치기 (C1·C2) | C1 레이드 중 메뉴 배경 영상 멈추기 / C2 착지한 에어드랍 상자 물리 끄기 — **게임 안에서만 동작, 서버로 안 보냄**(런처 모드 페이지에는 없음) |
 
 - 서버 콘솔에도 바뀐 내용이 한 줄로 찍힙니다: `F12 settings applied and saved: Server.FastCompression.Level "Fastest" → "Optimal"`
 - `MasterEnabled` 는 F12에 없습니다 — 패치 설치 여부 자체라서 `config.json` 수정 + 서버 재시작으로만 바뀝니다.
@@ -330,7 +337,7 @@ dotnet test  CompoundingPerf.sln -c Release
 
 ### `client/` 폴더
 
-2.2부터 **F12 설정 화면 플러그인**입니다(`ServerSettingsMenu.cs`, `ServerLink.cs`). 게임 패치는 없고,
+2.2부터 **F12 설정 화면 플러그인**입니다(`ServerSettingsMenu.cs`, `ServerLink.cs`). 게임 패치는 `ClientFixes.cs`(C1·C2, Harmony 4개)뿐이고,
 서버의 `/compoundingperf/config/get`·`/set` 주소와 평문 JSON(`requestcompressed: 0` / `responsecompressed: 0`)으로만 통신합니다.
 백엔드 주소는 게임 실행 인자 `-config={{"BackendUrl":...}}` 에서 읽습니다(`spt-common` 불필요).
 예전 벤치마크용 프레임 기록기는 그대로 `#if BENCH` 안에 있어서 `-p:Bench=true` 로 빌드할 때만 들어갑니다.

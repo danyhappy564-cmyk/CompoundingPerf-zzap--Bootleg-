@@ -134,6 +134,23 @@ internal sealed class ServerSettingsMenu
         _debugSlowMs = Bind(config, "Debug", "SlowRequestMs", 250, new AcceptableValueRange<int>(50, 5000));
         _debugKeep = Bind(config, "Debug", "KeepFiles", 10, new AcceptableValueRange<int>(1, 50));
 
+        // Client-side fixes (ClientFixes): run in the game, never sent to the server.
+        var c9 = new Cat("09. 게임 쪽 CPU 낭비 고치기 (C1·C2, 서버로 안 보냄)", "09. Game-side CPU waste fixes (C1·C2, not sent to the server)");
+        ClientFixes.MenuVideo = Bind(config, "C1 MenuVideo", "Enabled", c9, true, 20,
+            "C1 레이드 중 메뉴 배경 영상 멈추기", "C1 Pause the menu background video in raid",
+            "메인 메뉴 배경 중 하나는 영상 4개(2048x1024, 60fps)를 계속 돌립니다. 레이드에 들어가면 게임이 배경만 숨기고 영상은 그대로 둬서, 레이드 내내 보이지도 않는 영상을 디코딩합니다(CPU 코어를 잡아먹음). " +
+            "켜면 배경이 숨겨져 있는 동안 영상을 일시정지하고, 메뉴로 돌아오면 다시 재생합니다. 보이는 차이는 없습니다.",
+            "One of the main menu backgrounds keeps four 2048x1024 60 fps videos running. Going into a raid the game hides only the background and leaves the videos on, so they decode for the whole raid without being seen (eating CPU cores). " +
+            "With this on they are paused while the background is hidden and play again back in the menu. Nothing you can see changes.",
+            sendsToServer: false);
+        ClientFixes.AirdropPhysics = Bind(config, "C2 AirdropPhysics", "Enabled", c9, true, 10,
+            "C2 착지한 에어드랍 상자 물리 끄기", "C2 Release a landed airdrop's physics",
+            "에어드랍 상자는 떨어지기 시작할 때 게임의 물리 관리 목록에 등록되고 다시 빠지지 않습니다. 목록에 하나라도 있으면 게임은 맵 전체의 물리를 매 프레임 계산하므로, 에어드랍 하나가 레이드가 끝날 때까지 물리 계산을 계속 돌게 합니다(맵·봇 수에 따라 프레임당 1~3ms). " +
+            "켜면 상자가 땅에 완전히 내려앉은 뒤 목록에서만 뺍니다. 상자 위에 올라가기·루팅은 그대로입니다. 레이드 중에 켜면 그 뒤에 떨어지는 상자부터 적용됩니다. 상자를 시뮬레이션하는 쪽(솔로, Fika 호스트)에서만 동작합니다.",
+            "An airdrop crate is added to the game's physics list when it starts falling and is never taken off. While anything is on that list the game simulates the whole map's physics every frame, so one airdrop keeps it running until the raid ends (1-3 ms a frame depending on map and bots). " +
+            "With this on the crate is taken off the list once it has fully landed. Standing on it and looting work as before. Switched on mid-raid it applies to crates that land afterwards. Works where the crate is simulated (solo, or the Fika host).",
+            sendsToServer: false);
+
         ApplyLanguage();
         _language.SettingChanged += (_, _) => ApplyLanguage();
     }
